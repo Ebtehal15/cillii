@@ -15,7 +15,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const uploadsPath = path.join(__dirname, '..', 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+
+// ✅ Burayı değiştirdik
+app.use(
+  '/uploads',
+  express.static(uploadsPath, {
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  }),
+);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -27,7 +37,6 @@ app.use('/api/settings', settingsRouter);
 const port = process.env.PORT || 4000;
 
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log(`Server listening on port ${port}`);
 });
 
