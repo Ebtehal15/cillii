@@ -1,0 +1,47 @@
+import apiClient from './client';
+import type { BulkUploadResult, ClassFilters, ClassRecord } from '../types';
+
+export const fetchClasses = async (filters: ClassFilters = {}): Promise<ClassRecord[]> => {
+  const response = await apiClient.get<ClassRecord[]>('/api/classes', {
+    params: filters,
+  });
+  return response.data;
+};
+
+export const generateSpecialId = async (prefix?: string): Promise<string> => {
+  const response = await apiClient.post<{ specialId: string }>('/api/classes/generate-id', {
+    prefix,
+  });
+  return response.data.specialId;
+};
+
+export const createClass = async (formData: FormData): Promise<ClassRecord> => {
+  const response = await apiClient.post<ClassRecord>('/api/classes', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const updateClass = async (id: number, formData: FormData): Promise<ClassRecord> => {
+  const response = await apiClient.put<ClassRecord>(`/api/classes/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const deleteClass = async (id: number): Promise<void> => {
+  await apiClient.delete(`/api/classes/${id}`);
+};
+
+export const deleteAllClasses = async (): Promise<{ deletedCount: number }> => {
+  const response = await apiClient.delete<{ deletedCount: number }>('/api/classes');
+  return response.data;
+};
+
+export const bulkUploadClasses = async (formData: FormData): Promise<BulkUploadResult> => {
+  const response = await apiClient.post<BulkUploadResult>('/api/classes/bulk-upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
