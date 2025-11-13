@@ -27,6 +27,7 @@ const initializeDatabase = () => {
         main_category TEXT NOT NULL,
         quality TEXT NOT NULL,
         class_name TEXT NOT NULL,
+        class_name_ar TEXT,
         class_features TEXT,
         class_price REAL,
         class_weight REAL,
@@ -50,9 +51,12 @@ const initializeDatabase = () => {
       if (infoErr) {
         return;
       }
-      const hasWeightColumn = columns?.some((column) => column?.name === 'class_weight');
-      if (!hasWeightColumn) {
+      const columnNames = columns?.map((column) => column?.name) ?? [];
+      if (!columnNames.includes('class_weight')) {
         db.run('ALTER TABLE classes ADD COLUMN class_weight REAL');
+      }
+      if (!columnNames.includes('class_name_ar')) {
+        db.run('ALTER TABLE classes ADD COLUMN class_name_ar TEXT');
       }
     });
 
@@ -69,4 +73,5 @@ module.exports = {
   db,
   initializeDatabase,
 };
+
 

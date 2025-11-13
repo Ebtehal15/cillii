@@ -91,6 +91,22 @@ button {
   box-shadow: 0 16px 32px rgba(124, 58, 237, 0.35);
 }
 
+.nav__lang {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  background: rgba(248, 251, 255, 0.15);
+  color: #f8fbff;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.nav__lang:hover {
+  background: rgba(248, 251, 255, 0.3);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+  transform: translateY(-1px);
+}
+
 .main-content {
   flex: 1;
   width: min(1100px, 100% - 2.5rem);
@@ -284,6 +300,7 @@ button.danger {
   padding: 0.25rem;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.08);
+  margin-bottom: 0.75rem;
 }
 
 .catalog-view-toggle button {

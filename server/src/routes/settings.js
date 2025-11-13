@@ -10,6 +10,7 @@ const DEFAULT_VISIBILITY = {
   mainCategory: true,
   quality: true,
   className: true,
+  classNameArabic: false,
   classFeatures: true,
   classWeight: true,
   classPrice: true,

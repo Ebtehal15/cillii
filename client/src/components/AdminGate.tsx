@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAdminAccess } from '../context/AdminAccessContext';
+import useTranslate from '../hooks/useTranslate';
 
 interface AdminGateProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ const DEFAULT_PASSCODE = 'admin123';
 
 const AdminGate = ({ children }: AdminGateProps) => {
   const { isAdmin, authorize } = useAdminAccess();
+  const { t } = useTranslate();
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const location = useLocation();
@@ -27,25 +29,32 @@ const AdminGate = ({ children }: AdminGateProps) => {
       authorize();
       setError(null);
     } else {
-      setError('Incorrect passcode. Please try again.');
+      setError(t('Incorrect passcode. Please try again.', 'رمز المرور غير صحيح. حاول مرة أخرى.'));
     }
   };
 
   return (
     <div className="panel admin-gate">
       <div className="card">
-        <h1>Admin Access</h1>
+        <h1>{t('Admin Access', 'وصول الإدارة')}</h1>
         <p>
-          This area is restricted. Enter the admin passcode to continue.
+          {t('This area is restricted. Enter the admin passcode to continue.', 'هذا القسم مخصص للإدارة. أدخل رمز المرور للمتابعة.')}
           {configuredPasscode === DEFAULT_PASSCODE && (
             <em className="admin-gate__hint">
-              You can change the passcode by setting <code>VITE_ADMIN_PASSCODE</code> in your environment.
+              {t(
+                'You can change the passcode by setting',
+                'يمكنك تغيير رمز المرور من خلال ضبط',
+              )}
+              {' '}
+              <code>VITE_ADMIN_PASSCODE</code>
+              {' '}
+              {t('in your environment.', 'في ملف بيئة التشغيل.')}
             </em>
           )}
         </p>
         <form className="form" onSubmit={handleSubmit}>
           <label>
-            Passcode
+            {t('Passcode', 'رمز المرور')}
             <input
               type="password"
               value={passcode}
@@ -54,12 +63,14 @@ const AdminGate = ({ children }: AdminGateProps) => {
             />
           </label>
           <button type="submit">
-            Unlock Admin
+            {t('Unlock Admin', 'فتح لوحة الإدارة')}
           </button>
           {error && <div className="alert alert--error">{error}</div>}
         </form>
         <p className="admin-gate__meta">
-          Requested URL: <code>{location.pathname}</code>
+          {t('Requested URL:', 'الرابط المطلوب:')}
+          {' '}
+          <code>{location.pathname}</code>
         </p>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import useTranslate from '../hooks/useTranslate';
+
 interface VideoPreviewProps {
   src?: string | null;
   title: string;
@@ -5,8 +7,10 @@ interface VideoPreviewProps {
 }
 
 const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => {
+  const { language, t } = useTranslate();
+
   if (!src) {
-    return <span className="video-placeholder">No video</span>;
+    return <span className="video-placeholder">{t('No video', 'لا يوجد فيديو')}</span>;
   }
 
   const openInlineModal = () => {
@@ -56,7 +60,9 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
         type="button"
         className="video-button video-button--icon"
         onClick={openInlineModal}
-        aria-label={`Play ${title} video`}
+        aria-label={language === 'ar'
+          ? `تشغيل فيديو ${title}`
+          : `Play ${title} video`}
       >
         <span aria-hidden="true">▶</span>
       </button>

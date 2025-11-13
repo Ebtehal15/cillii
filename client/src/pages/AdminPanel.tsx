@@ -15,12 +15,13 @@ import type { BulkUploadResult, ClassFilters, ClassRecord, ColumnVisibility, Col
 import VideoPreview from '../components/VideoPreview';
 import { useAdminAccess } from '../context/AdminAccessContext';
 import {
-  columnLabels,
   columnOptions,
   defaultColumnVisibility,
+  buildColumnLabels,
   orderedColumns,
 } from '../constants/columns';
 import { fetchColumnVisibility, updateColumnVisibility } from '../api/settings';
+import useTranslate from '../hooks/useTranslate';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
@@ -29,6 +30,7 @@ interface FormState {
   mainCategory: string;
   quality: string;
   className: string;
+  classNameArabic: string;
   classFeatures: string;
   classPrice: string;
   classWeight: string;
@@ -40,6 +42,7 @@ const emptyForm: FormState = {
   mainCategory: '',
   quality: '',
   className: '',
+  classNameArabic: '',
   classFeatures: '',
   classPrice: '',
   classWeight: '',
@@ -61,6 +64,16 @@ const AdminPanel = () => {
 
   const queryClient = useQueryClient();
   const { data: classes = [], isLoading, error } = useClasses(filters);
+  const { language, t } = useTranslate();
+
+  const columnLabels = useMemo(
+    () => buildColumnLabels(language),
+    [language],
+  );
+  const columnOptionsWithLabels = useMemo(
+    () => columnOptions.map(({ key }) => ({ key, label: columnLabels[key] })),
+    [columnLabels],
+  );
   const { revoke } = useAdminAccess();
   const columnVisibilityQuery = useQuery({
     queryKey: ['columnVisibility'],
@@ -166,6 +179,7 @@ const AdminPanel = () => {
       mainCategory: record.mainCategory ?? '',
       quality: record.quality ?? '',
       className: record.className ?? '',
+      classNameArabic: record.classNameArabic ?? '',
       classFeatures: record.classFeatures ?? '',
       classPrice: record.classPrice !== null && record.classPrice !== undefined
         ? String(record.classPrice)
@@ -192,13 +206,13 @@ const AdminPanel = () => {
         ...prev,
         specialId: nextId,
       }));
-      setFeedback(`Generated next ID ${nextId}.`);
+      setFeedback(t(`Generated next ID ${nextId}.`, `تم إنشاء المعرف التالي ${nextId}.`));
       setErrorFeedback(null);
     } catch (idError) {
       if (idError instanceof Error) {
         setErrorFeedback(idError.message);
       } else {
-        setErrorFeedback('Failed to generate a new ID.');
+        setErrorFeedback(t('Failed to generate a new ID.', 'تعذر إنشاء معرف جديد.'));
       }
     }
   };
@@ -238,6 +252,7 @@ const AdminPanel = () => {
     data.append('mainCategory', formState.mainCategory);
     data.append('quality', formState.quality);
     data.append('className', formState.className);
+    data.append('classNameArabic', formState.classNameArabic);
     data.append('classFeatures', formState.classFeatures);
     data.append('classPrice', formState.classPrice);
     data.append('classWeight', formState.classWeight);
@@ -251,7 +266,7 @@ const AdminPanel = () => {
     mutationFn: createClass,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
-      setFeedback('Class created successfully.');
+      setFeedback(t('Class created successfully.', 'تم إنشاء الصنف بنجاح.'));
       setErrorFeedback(null);
       resetForm(true);
     },
@@ -265,7 +280,7 @@ const AdminPanel = () => {
     mutationFn: ({ id, data }: { id: number; data: FormData }) => updateClass(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
-      setFeedback('Class updated successfully.');
+      setFeedback(t('Class updated successfully.', 'تم تحديث الصنف بنجاح.'));
       setErrorFeedback(null);
       resetForm(true);
     },
@@ -279,7 +294,7 @@ const AdminPanel = () => {
     mutationFn: deleteClass,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
-      setFeedback('Class deleted successfully.');
+      setFeedback(t('Class deleted successfully.', 'تم حذف الصنف بنجاح.'));
       setErrorFeedback(null);
       setBulkReport(null);
     },
@@ -293,7 +308,7 @@ const AdminPanel = () => {
     mutationFn: deleteAllClasses,
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
-      setFeedback(`Deleted ${result.deletedCount} class(es).`);
+      setFeedback(t(`Deleted ${result.deletedCount} class(es).`, `تم حذف ${result.deletedCount} صنف/أصناف.`));
       setErrorFeedback(null);
       setBulkReport(null);
       resetForm(true);
@@ -335,17 +350,25 @@ const AdminPanel = () => {
   };
 
   const handleDelete = (record: ClassRecord) => {
-    if (window.confirm(`Delete ${record.className}? This action cannot be undone.`)) {
+    const localizedName = language === 'ar' && record.classNameArabic ? record.classNameArabic : record.className;
+    const message = language === 'ar'
+      ? `حذف ${localizedName}؟ لا يمكن التراجع عن هذا الإجراء.`
+      : `Delete ${localizedName}? This action cannot be undone.`;
+    if (window.confirm(message)) {
       deleteMutation.mutate(record.id);
     }
   };
 
   const handleDeleteAll = () => {
     if (!classes.length) {
-      setErrorFeedback('There are no classes to delete.');
+      setErrorFeedback(t('There are no classes to delete.', 'لا توجد أصناف لحذفها.'));
       return;
     }
-    if (window.confirm('Delete ALL classes? This will permanently remove every record and any uploaded videos.')) {
+    const message = t(
+      'Delete ALL classes? This will permanently remove every record and any uploaded videos.',
+      'هل تريد حذف جميع الأصناف؟ سيؤدي ذلك إلى إزالة كل السجلات وأي مقاطع فيديو مرفوعة نهائياً.',
+    );
+    if (window.confirm(message)) {
       deleteAllMutation.mutate();
     }
   };
@@ -357,13 +380,13 @@ const AdminPanel = () => {
         ...prev,
         specialId: nextId,
       }));
-      setFeedback(`Generated ID ${nextId}. Remember to save.`);
+      setFeedback(t(`Generated ID ${nextId}. Remember to save.`, `تم إنشاء المعرف ${nextId}. لا تنس الحفظ.`));
       setErrorFeedback(null);
     } catch (generationError) {
       if (generationError instanceof Error) {
         setErrorFeedback(generationError.message);
       } else {
-        setErrorFeedback('Failed to generate special ID.');
+        setErrorFeedback(t('Failed to generate special ID.', 'تعذر إنشاء معرف خاص.'));
       }
       setFeedback(null);
     }
@@ -373,7 +396,7 @@ const AdminPanel = () => {
     event.preventDefault();
     setBulkReport(null);
     if (!excelFile) {
-      setErrorFeedback('Please select an Excel file to upload.');
+      setErrorFeedback(t('Please select an Excel file to upload.', 'يرجى اختيار ملف إكسل للتحميل.'));
       return;
     }
     const data = new FormData();
@@ -391,15 +414,15 @@ const AdminPanel = () => {
     <section className="panel">
       <header className="panel__header">
         <div className="panel__header-content">
-          <h1>Admin Panel</h1>
-          <p>Manage product classes, upload media, and keep the catalog up to date.</p>
+          <h1>{t('Admin Panel', 'لوحة الإدارة')}</h1>
+          <p>{t('Manage product classes, upload media, and keep the catalog up to date.', 'إدارة أصناف المنتجات، وتحميل الوسائط، والحفاظ على الكتالوج محدثاً.')}</p>
         </div>
         <div className="panel__header-actions">
           <button type="button" onClick={handleAddClick}>
-            + Add Class
+            {t('+ Add Class', '+ إضافة صنف')}
           </button>
           <button type="button" className="secondary" onClick={revoke}>
-            Sign Out
+            {t('Sign Out', 'تسجيل الخروج')}
           </button>
         </div>
       </header>
@@ -415,23 +438,19 @@ const AdminPanel = () => {
         <div className="admin-stats__metrics">
           <div className="admin-stat">
             <span>{classes.length}</span>
-            <p>Total Classes</p>
-          </div>
-          <div className="admin-stat">
-            <span>{categories.length}</span>
-            <p>Main Categories</p>
+            <p>{t('Total Classes', 'إجمالي الأصناف')}</p>
           </div>
           <div className="admin-stat">
             <span>{groups.length}</span>
-            <p>Groups</p>
+            <p>{t('Groups', 'المجموعات')}</p>
           </div>
           <div className="admin-stat">
             <span>{totalVideos}</span>
-            <p>Videos Uploaded</p>
+            <p>{t('Videos Uploaded', 'عدد مقاطع الفيديو')}</p>
           </div>
           <div className="admin-stat admin-stat--warning">
             <span>{missingVideoClasses.length}</span>
-            <p>Missing Videos</p>
+            <p>{t('Missing Videos', 'أصناف بلا فيديو')}</p>
           </div>
         </div>
         {missingVideoClasses.length > 0 && (
@@ -442,7 +461,9 @@ const AdminPanel = () => {
               onClick={() => setIsMissingVideoExpanded((prev) => !prev)}
             >
               <span>
-                Classes without video ({missingVideoClasses.length})
+                {t('Classes without video', 'أصناف بلا فيديو')}
+                {' '}
+                ({missingVideoClasses.length})
               </span>
               <span aria-hidden="true">{isMissingVideoExpanded ? '−' : '+'}</span>
             </button>
@@ -450,7 +471,9 @@ const AdminPanel = () => {
               <ul>
                 {missingVideoClasses.map((item) => (
                   <li key={item.id}>
-                    <span className="admin-stats__missing-name">{item.className}</span>
+                    <span className="admin-stats__missing-name">
+                      {language === 'ar' && item.classNameArabic ? item.classNameArabic : item.className}
+                    </span>
                     <span className="admin-stats__missing-id">{item.specialId}</span>
                   </li>
                 ))}
@@ -464,41 +487,41 @@ const AdminPanel = () => {
         <div className="card table-wrapper">
           <div className="table-card__header">
             <div className="table-card__title">
-              <h2>Classes ({classes.length})</h2>
-              <p>Browse and manage all catalog classes from a single view.</p>
+              <h2>{t('Classes', 'الأصناف')} ({classes.length})</h2>
+              <p>{t('Browse and manage all catalog classes from a single view.', 'تصفح جميع الأصناف وقم بإدارتها من مكان واحد.')}</p>
             </div>
             <div className="table-card__filters">
               <label>
-                Search
+                {t('Search', 'بحث')}
                 <input
                   type="search"
                   name="search"
                   value={filters.search ?? ''}
                   onChange={handleFilterChange}
-                  placeholder="Search by ID or class name"
+                  placeholder={t('Search by ID or class name', 'ابحث بالرمز أو اسم الصنف')}
                 />
               </label>
               <label>
-                Category
+                {t('Category', 'الفئة')}
                 <select
                   name="category"
                   value={filters.category ?? ''}
                   onChange={handleFilterChange}
                 >
-                  <option value="">All</option>
+                  <option value="">{t('All', 'الكل')}</option>
                   {categories.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </label>
           <label>
-            Group
+            {t('Group', 'المجموعة')}
             <select
               name="quality"
               value={filters.quality ?? ''}
               onChange={handleFilterChange}
             >
-              <option value="">All</option>
+              <option value="">{t('All', 'الكل')}</option>
               {groups.map((group) => (
                 <option key={group} value={group}>{group}</option>
               ))}
@@ -506,18 +529,18 @@ const AdminPanel = () => {
           </label>
               <div className="table-card__filter-actions">
                 <button type="button" className="secondary" onClick={handleClearFilters}>
-                  Clear Filters
+                  {t('Clear Filters', 'إزالة الفلترة')}
                 </button>
                 <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] })}>
-                  Refresh
+                  {t('Refresh', 'تحديث')}
                 </button>
               </div>
             </div>
             <div className="table-card__controls">
               <details className="column-switcher">
-                <summary>Columns</summary>
+                <summary>{t('Columns', 'الأعمدة')}</summary>
                 <div className="column-switcher__grid">
-                  {columnOptions.map(({ key, label }) => {
+                  {columnOptionsWithLabels.map(({ key, label }) => {
                     const disabled = (activeColumnCount <= 1 && columnVisibility[key]) || isUpdatingColumns;
                     return (
                       <label key={key}>
@@ -539,16 +562,16 @@ const AdminPanel = () => {
                 onClick={handleDeleteAll}
                 disabled={deleteAllMutation.isPending || !classes.length}
               >
-                {deleteAllMutation.isPending ? 'Deleting…' : 'Delete All'}
+                {deleteAllMutation.isPending ? t('Deleting…', 'جارٍ الحذف...') : t('Delete All', 'حذف الكل')}
               </button>
             </div>
           </div>
 
-          {isLoading && <p>Loading classes...</p>}
-          {error && <p className="alert alert--error">Failed to load classes.</p>}
+          {isLoading && <p>{t('Loading classes...', 'جاري تحميل الأصناف...')}</p>}
+          {error && <p className="alert alert--error">{t('Failed to load classes.', 'تعذر تحميل الأصناف.')}</p>}
 
           {!isLoading && !classes.length && (
-            <p>No records yet. Add your first class using the form.</p>
+            <p>{t('No records yet. Add your first class using the form.', 'لا توجد سجلات بعد. أضف أول صنف باستخدام النموذج.')}</p>
           )}
 
           {!isLoading && classes.length > 0 && (
@@ -559,7 +582,7 @@ const AdminPanel = () => {
                     {orderedVisibleColumns.map((key) => (
                       <th key={key}>{columnLabels[key]}</th>
                     ))}
-                    <th>Actions</th>
+                    <th>{t('Actions', 'إجراءات')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -579,10 +602,15 @@ const AdminPanel = () => {
                             content = item.quality;
                             break;
                           case 'className':
-                            content = item.className;
+                            content = language === 'ar' && item.classNameArabic
+                              ? item.classNameArabic
+                              : item.className;
+                            break;
+                          case 'classNameArabic':
+                            content = item.classNameArabic || '-';
                             break;
                           case 'classFeatures':
-                            content = item.classFeatures;
+                            content = item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.');
                             break;
                           case 'classWeight':
                             content = item.classWeight !== null && item.classWeight !== undefined
@@ -592,13 +620,15 @@ const AdminPanel = () => {
                           case 'classPrice':
                             content = item.classPrice !== null && item.classPrice !== undefined
                               ? `$${item.classPrice.toFixed(2)}`
-                              : '-';
+                              : t('Price on request', 'السعر عند الطلب');
                             break;
                           case 'classVideo':
                             content = (
                               <VideoPreview
                                 src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
-                                title={item.className}
+                                title={language === 'ar' && item.classNameArabic
+                                  ? item.classNameArabic
+                                  : item.className}
                               />
                             );
                             break;
@@ -611,9 +641,9 @@ const AdminPanel = () => {
                           </td>
                         );
                       })}
-                      <td className="table__actions" data-label="Actions">
+                      <td className="table__actions" data-label={t('Actions', 'إجراءات')}>
                         <button type="button" onClick={() => handleEdit(item)}>
-                          Edit
+                          {t('Edit', 'تعديل')}
                         </button>
                         <button
                           type="button"
@@ -621,7 +651,7 @@ const AdminPanel = () => {
                           onClick={() => handleDelete(item)}
                           disabled={deleteMutation.isPending}
                         >
-                          Delete
+                          {t('Delete', 'حذف')}
                         </button>
                       </td>
                     </tr>
@@ -634,10 +664,10 @@ const AdminPanel = () => {
 
         {isFormVisible && (
           <form className="card form" onSubmit={handleSubmit}>
-            <h2>{selectedClass ? 'Edit Class' : 'Add New Class'}</h2>
+            <h2>{selectedClass ? t('Edit Class', 'تعديل الصنف') : t('Add New Class', 'إضافة صنف جديد')}</h2>
 
             <label>
-              Special ID
+              {t('Special ID', 'الرمز الخاص')}
               <input
                 type="text"
                 name="specialId"
@@ -648,7 +678,7 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Prefix for Auto ID
+              {t('Prefix for Auto ID', 'بادئة المعرف التلقائي')}
               <div className="input-with-button">
                 <input
                   type="text"
@@ -663,13 +693,13 @@ const AdminPanel = () => {
                   onClick={handleGenerateId}
                   disabled={actionInProgress}
                 >
-                  Generate
+                  {t('Generate', 'توليد')}
                 </button>
               </div>
             </label>
 
             <label>
-              Main Category
+              {t('Main Category', 'الفئة الرئيسية')}
               <input
                 type="text"
                 name="mainCategory"
@@ -679,7 +709,7 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Group
+              {t('Group', 'المجموعة')}
               <input
                 type="text"
                 name="quality"
@@ -689,7 +719,7 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Class Name*
+              {t('Class Name*', 'اسم الصنف*')}
               <input
                 type="text"
                 name="className"
@@ -700,7 +730,19 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Class Features
+              {t('Class Name (Arabic)', 'اسم الصنف (عربي)')}
+              <input
+                type="text"
+                name="classNameArabic"
+                value={formState.classNameArabic}
+                onChange={handleInputChange}
+                placeholder="اسم الصنف"
+                dir="rtl"
+              />
+            </label>
+
+            <label>
+              {t('Class Features', 'مميزات الصنف')}
               <textarea
                 name="classFeatures"
                 value={formState.classFeatures}
@@ -710,7 +752,7 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Class Weight (kg)
+              {t('Class Weight (kg)', 'وزن الصنف (كجم)')}
               <input
                 type="number"
                 name="classWeight"
@@ -722,7 +764,7 @@ const AdminPanel = () => {
             </label>
 
             <label>
-              Class Price
+              {t('Class Price', 'سعر الصنف')}
               <input
                 type="number"
                 name="classPrice"
@@ -763,7 +805,7 @@ const AdminPanel = () => {
           <h2>Bulk Upload</h2>
           <p className="form__hint">
             Upload an Excel file with columns:
-            Special ID, Main Category, Group, Class Name, Class Features, Class Price, Class KG, Class Video.
+            Special ID, Main Category, Group, Class Name, Class Name Arabic, Class Features, Class Price, Class KG, Class Video.
           </p>
           <input
             type="file"

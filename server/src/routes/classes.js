@@ -56,6 +56,7 @@ const mapRowToResponse = (row) => ({
   mainCategory: row.main_category,
   quality: row.quality,
   className: row.class_name,
+  classNameArabic: row.class_name_ar,
   classFeatures: row.class_features,
   classPrice: row.class_price,
   classWeight: row.class_weight,
@@ -71,9 +72,9 @@ router.get('/', (req, res) => {
   const params = [];
 
   if (search) {
-    filters.push('(LOWER(special_id) LIKE ? OR LOWER(class_name) LIKE ?)');
+    filters.push('(LOWER(special_id) LIKE ? OR LOWER(class_name) LIKE ? OR LOWER(IFNULL(class_name_ar, "")) LIKE ?)');
     const term = `%${search.toLowerCase()}%`;
-    params.push(term, term);
+    params.push(term, term, term);
   }
 
   if (category) {
@@ -159,11 +160,12 @@ router.post(
           main_category,
           quality,
           class_name,
+          class_name_ar,
           class_features,
           class_price,
           class_weight,
           class_video
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
@@ -171,6 +173,7 @@ router.post(
         payload.mainCategory ?? '',
         payload.quality ?? '',
         payload.className,
+        payload.classNameArabic || null,
         payload.classFeatures || null,
         payload.classPrice,
         payload.classWeight,
@@ -237,6 +240,7 @@ router.put(
               main_category = ?,
               quality = ?,
               class_name = ?,
+              class_name_ar = ?,
               class_features = ?,
               class_price = ?,
               class_weight = ?,
@@ -252,6 +256,7 @@ router.put(
           payload.mainCategory !== undefined ? payload.mainCategory : current.main_category,
           payload.quality !== undefined ? payload.quality : current.quality,
           payload.className || current.class_name,
+          payload.classNameArabic !== undefined ? payload.classNameArabic : current.class_name_ar,
           payload.classFeatures !== undefined ? payload.classFeatures : current.class_features,
           payload.classPrice !== undefined ? payload.classPrice : current.class_price,
           payload.classWeight !== undefined ? payload.classWeight : current.class_weight,
@@ -377,11 +382,12 @@ router.post(
           main_category,
           quality,
           class_name,
+          class_name_ar,
           class_features,
           class_price,
           class_weight,
           class_video
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const processed = [];
@@ -394,6 +400,7 @@ router.post(
             mainCategory: row['Main Category'] || row['main_category'],
             quality: row['Group'] || row['group'] || row['Quality'] || row['quality'],
             className: row['Class Name'] || row['class_name'],
+            classNameArabic: row['Class Name Arabic'] || row['class_name_ar'],
             classFeatures: row['Class Features'] || row['class_features'],
             classPrice: row['Class Price'] || row['class_price'],
             classWeight: row['Class KG'] || row['class_weight'] || row['Class Weight'],
@@ -417,6 +424,7 @@ router.post(
               parsed.mainCategory ?? '',
               parsed.quality ?? '',
               parsed.className,
+              parsed.classNameArabic || null,
               parsed.classFeatures || null,
               priceValue,
               weightValue,

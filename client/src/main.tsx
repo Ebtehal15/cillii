@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { AdminAccessProvider } from './context/AdminAccessContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 const queryClient = new QueryClient();
 
@@ -18,9 +19,11 @@ ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AdminAccessProvider>
-          <App />
-        </AdminAccessProvider>
+        <LanguageProvider>
+          <AdminAccessProvider>
+            <App />
+          </AdminAccessProvider>
+        </LanguageProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

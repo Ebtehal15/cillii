@@ -6,10 +6,11 @@ import type { ClassFilters, ClassRecord, ColumnVisibility, ColumnKey } from '../
 import VideoPreview from '../components/VideoPreview';
 import { fetchColumnVisibility } from '../api/settings';
 import {
-  columnLabels,
+  buildColumnLabels,
   defaultColumnVisibility,
   orderedColumns,
 } from '../constants/columns';
+import useTranslate from '../hooks/useTranslate';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
@@ -19,16 +20,12 @@ const UserPanel = () => {
   const [filters, setFilters] = useState<ClassFilters>({});
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const { data: classes = [], isLoading, error } = useClasses(filters);
+  const { language, t } = useTranslate();
 
-  const categories = useMemo<string[]>(() => {
-    const set = new Set<string>();
-    classes.forEach((item) => {
-      if (item.mainCategory) {
-        set.add(item.mainCategory);
-      }
-    });
-    return Array.from(set).sort();
-  }, [classes]);
+  const columnLabels = useMemo(
+    () => buildColumnLabels(language),
+    [language],
+  );
 
   const groups = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -60,9 +57,13 @@ const UserPanel = () => {
       case 'quality':
         return item.quality;
       case 'className':
-        return item.className;
+        return language === 'ar' && item.classNameArabic
+          ? item.classNameArabic
+          : item.className;
+      case 'classNameArabic':
+        return item.classNameArabic || '—';
       case 'classFeatures':
-        return item.classFeatures || 'No features provided yet.';
+        return item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.');
       case 'classWeight':
         return item.classWeight !== null && item.classWeight !== undefined
           ? `${item.classWeight.toFixed(2)} kg`
@@ -70,12 +71,12 @@ const UserPanel = () => {
       case 'classPrice':
         return item.classPrice !== null && item.classPrice !== undefined
           ? `$${item.classPrice.toFixed(2)}`
-          : 'Price on request';
+          : t('Price on request', 'السعر عند الطلب');
       case 'classVideo':
         return (
           <VideoPreview
             src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
-            title={item.className}
+            title={language === 'ar' && item.classNameArabic ? item.classNameArabic : item.className}
             variant="icon"
           />
         );
@@ -83,8 +84,6 @@ const UserPanel = () => {
         return '—';
     }
   };
-
-  const totalVideos = useMemo(() => classes.filter((item) => item.classVideo).length, [classes]);
 
   const handleFilterChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -100,72 +99,31 @@ const UserPanel = () => {
 
   return (
     <section className="panel catalog-panel">
-      <div className="card catalog-hero">
-        <div className="catalog-hero__copy">
-          <h1>Product Catalog</h1>
-          <p>
-            Browse curated product classes, compare groups, and share immersive videos with your customers.
-          </p>
-        </div>
-        <div className="catalog-stats">
-          <div className="catalog-stat">
-            <span>{classes.length}</span>
-            <p>Total Classes</p>
-          </div>
-          <div className="catalog-stat">
-            <span>{categories.length}</span>
-            <p>Main Categories</p>
-          </div>
-          <div className="catalog-stat">
-            <span>{groups.length}</span>
-            <p>Groups</p>
-          </div>
-          <div className="catalog-stat">
-            <span>{totalVideos}</span>
-            <p>Video Walkthroughs</p>
-          </div>
-        </div>
-      </div>
-
       <div className="card catalog-filters">
         <div className="catalog-filters__header">
-          <h2>Search & Filters</h2>
-          <p>Use flexible filters to focus on the categories and groups that fit the brief.</p>
+          <h2>{t('Search & Filters', 'البحث والتصفية')}</h2>
+          <p>{t('Use flexible filters to focus on the categories and groups that fit the brief.', 'استخدم خيارات التصفية للتركيز على الفئات المناسبة.')}</p>
         </div>
         <div className="catalog-filters__grid">
           <label>
-            Search
+            {t('Search', 'بحث')}
             <input
               type="search"
               name="search"
               value={filters.search ?? ''}
               onChange={handleFilterChange}
-              placeholder="Search by ID or class name"
+              placeholder={t('Search by ID or class name', 'ابحث بالرمز أو اسم الصنف')}
             />
           </label>
 
           <label>
-            Category
-            <select
-              name="category"
-              value={filters.category ?? ''}
-              onChange={handleFilterChange}
-            >
-              <option value="">All</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Group
+            {t('Group', 'المجموعة')}
             <select
               name="quality"
               value={filters.quality ?? ''}
               onChange={handleFilterChange}
             >
-              <option value="">All</option>
+              <option value="">{t('All', 'الكل')}</option>
               {groups.map((group) => (
                 <option key={group} value={group}>{group}</option>
               ))}
@@ -174,16 +132,16 @@ const UserPanel = () => {
         </div>
         <div className="catalog-filters__actions">
           <button type="button" className="secondary" onClick={handleClearFilters}>
-            Clear Filters
+            {t('Clear Filters', 'إزالة الفلترة')}
           </button>
         </div>
       </div>
 
-      {isLoading && <p>Loading catalog...</p>}
-      {error && <p className="alert alert--error">Failed to load catalog.</p>}
+      {isLoading && <p>{t('Loading catalog...', 'جاري تحميل الكتالوج...')}</p>}
+      {error && <p className="alert alert--error">{t('Failed to load catalog.', 'تعذر تحميل الكتالوج.')}</p>}
       {!isLoading && !classes.length && (
         <div className="card">
-          <p>No products available yet. Please check back later.</p>
+          <p>{t('No products available yet. Please check back later.', 'لا توجد منتجات حالياً. يرجى العودة لاحقاً.')}</p>
         </div>
       )}
 
@@ -191,8 +149,8 @@ const UserPanel = () => {
         <div className="card catalog-table">
           <div className="catalog-table__header">
             <div>
-              <h2>Available Classes</h2>
-              <p>High-level overview of every class, organised for quick reference during buyer sessions.</p>
+              <h2>{t('Available Classes', 'الأصناف المتاحة')}</h2>
+              <p>{t('High-level overview of every class, organised for quick reference during buyer sessions.', ' نظرة شاملة على جميع الأصناف .')}</p>
             </div>
           </div>
           <div className="catalog-view-toggle" role="group" aria-label="View mode">
@@ -202,7 +160,7 @@ const UserPanel = () => {
               aria-pressed={viewMode === 'table'}
               onClick={() => setViewMode('table')}
             >
-              Table
+              {t('Table', 'جدول')}
             </button>
             <button
               type="button"
@@ -210,7 +168,7 @@ const UserPanel = () => {
               aria-pressed={viewMode === 'cards'}
               onClick={() => setViewMode('cards')}
             >
-              Cards
+              {t('Cards', 'بطاقات')}
             </button>
           </div>
           {viewMode === 'table' ? (
@@ -240,38 +198,44 @@ const UserPanel = () => {
                 <article key={item.id} className="catalog-card">
                   <header className="catalog-card__header">
                     <span className="catalog-card__id">{item.specialId}</span>
-                    <h3>{item.className}</h3>
-                    <p>{item.quality || '—'}</p>
+                    <h3>
+                      {language === 'ar' && item.classNameArabic
+                        ? item.classNameArabic
+                        : item.className}
+                    </h3>
+                  <p>{item.quality || '—'}</p>
                   </header>
                   <dl>
                     <div>
-                      <dt>Main Category</dt>
+                      <dt>{t('Main Category', 'الفئة الرئيسية')}</dt>
                       <dd>{item.mainCategory || '—'}</dd>
                     </div>
-                    <div>
-                      <dt>Features</dt>
-                      <dd>{item.classFeatures || 'No features provided yet.'}</dd>
-                    </div>
-                    <div>
-                      <dt>Weight</dt>
-                      <dd>
-                        {item.classWeight !== null && item.classWeight !== undefined
-                          ? `${item.classWeight.toFixed(2)} kg`
-                          : '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Price</dt>
-                      <dd>
-                        {item.classPrice !== null && item.classPrice !== undefined
-                          ? `$${item.classPrice.toFixed(2)}`
-                          : 'Price on request'}
-                      </dd>
-                    </div>
+                  <div>
+                    <dt>{t('Features', 'المميزات')}</dt>
+                    <dd>{item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.')}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('Weight', 'الوزن')}</dt>
+                    <dd>
+                      {item.classWeight !== null && item.classWeight !== undefined
+                        ? `${item.classWeight.toFixed(2)} kg`
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('Price', 'السعر')}</dt>
+                    <dd>
+                      {item.classPrice !== null && item.classPrice !== undefined
+                        ? `$${item.classPrice.toFixed(2)}`
+                        : t('Price on request', 'السعر عند الطلب')}
+                    </dd>
+                  </div>
                   </dl>
                   <VideoPreview
                     src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
-                    title={item.className}
+                    title={language === 'ar' && item.classNameArabic
+                      ? item.classNameArabic
+                      : item.className}
                   variant="icon"
                   />
                 </article>
