@@ -13,8 +13,11 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
+type ViewMode = 'table' | 'cards';
+
 const UserPanel = () => {
   const [filters, setFilters] = useState<ClassFilters>({});
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const { data: classes = [], isLoading, error } = useClasses(filters);
 
   const categories = useMemo<string[]>(() => {
@@ -73,6 +76,7 @@ const UserPanel = () => {
           <VideoPreview
             src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
             title={item.className}
+            variant="icon"
           />
         );
       default:
@@ -191,26 +195,89 @@ const UserPanel = () => {
               <p>High-level overview of every class, organised for quick reference during buyer sessions.</p>
             </div>
           </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  {visibleColumnKeys.map((key) => (
-                    <th key={key}>{columnLabels[key]}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {classes.map((item: ClassRecord) => (
-                  <tr key={item.id}>
+          <div className="catalog-view-toggle" role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={viewMode === 'table' ? 'active' : ''}
+              aria-pressed={viewMode === 'table'}
+              onClick={() => setViewMode('table')}
+            >
+              Table
+            </button>
+            <button
+              type="button"
+              className={viewMode === 'cards' ? 'active' : ''}
+              aria-pressed={viewMode === 'cards'}
+              onClick={() => setViewMode('cards')}
+            >
+              Cards
+            </button>
+          </div>
+          {viewMode === 'table' ? (
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
                     {visibleColumnKeys.map((key) => (
-                      <td key={key}>{renderCell(item, key)}</td>
+                      <th key={key}>{columnLabels[key]}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {classes.map((item: ClassRecord) => (
+                    <tr key={item.id}>
+                      {visibleColumnKeys.map((key) => (
+                        <td key={key}>{renderCell(item, key)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="catalog-card-grid">
+              {classes.map((item) => (
+                <article key={item.id} className="catalog-card">
+                  <header className="catalog-card__header">
+                    <span className="catalog-card__id">{item.specialId}</span>
+                    <h3>{item.className}</h3>
+                    <p>{item.quality || '—'}</p>
+                  </header>
+                  <dl>
+                    <div>
+                      <dt>Main Category</dt>
+                      <dd>{item.mainCategory || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Features</dt>
+                      <dd>{item.classFeatures || 'No features provided yet.'}</dd>
+                    </div>
+                    <div>
+                      <dt>Weight</dt>
+                      <dd>
+                        {item.classWeight !== null && item.classWeight !== undefined
+                          ? `${item.classWeight.toFixed(2)} kg`
+                          : '—'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Price</dt>
+                      <dd>
+                        {item.classPrice !== null && item.classPrice !== undefined
+                          ? `$${item.classPrice.toFixed(2)}`
+                          : 'Price on request'}
+                      </dd>
+                    </div>
+                  </dl>
+                  <VideoPreview
+                    src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
+                    title={item.className}
+                  variant="icon"
+                  />
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>
