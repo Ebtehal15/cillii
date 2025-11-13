@@ -2,17 +2,23 @@ import { NavLink } from 'react-router-dom';
 import logoUrl from '../assets/ajlogo.png';
 import { useAdminAccess } from '../context/AdminAccessContext';
 import useTranslate from '../hooks/useTranslate';
+import type { SupportedLanguage } from '../context/LanguageContext';
 
 const NavBar = () => {
   const { isAdmin } = useAdminAccess();
-  const { language, t, toggleLanguage } = useTranslate();
+  const { language, t, setLanguage } = useTranslate();
 
   const labels = {
-    brand: t('Product Catalog', 'كتالوج المنتجات'),
-    catalog: t('Catalog', 'الكتالوج'),
-    admin: t('Admin', 'الإدارة'),
-    toggle: language === 'ar' ? 'English' : 'العربية',
+    brand: t('Product Catalog', 'كتالوج المنتجات', 'Catálogo de Productos'),
+    catalog: t('Catalog', 'الكتالوج', 'Catálogo'),
+    admin: t('Admin', 'الإدارة', 'Administración'),
   };
+
+  const languageOptions: Array<{ code: SupportedLanguage; label: string; aria: string }> = [
+    { code: 'en', label: 'EN', aria: 'English' },
+    { code: 'ar', label: 'AR', aria: 'العربية' },
+    { code: 'es', label: 'ES', aria: 'Español' },
+  ];
 
   return (
     <header className="nav">
@@ -35,9 +41,20 @@ const NavBar = () => {
             {labels.admin}
           </NavLink>
         )}
-        <button type="button" className="nav__lang" onClick={toggleLanguage}>
-          {labels.toggle}
-        </button>
+        <div className="nav__lang-group">
+          {languageOptions.map(({ code, label, aria }) => (
+            <button
+              key={code}
+              type="button"
+              className={`nav__lang-btn ${language === code ? 'nav__lang-btn--active' : ''}`}
+              onClick={() => setLanguage(code)}
+              aria-label={aria}
+              title={aria}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </nav>
     </header>
   );

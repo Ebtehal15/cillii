@@ -10,7 +10,7 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
   const { language, t } = useTranslate();
 
   if (!src) {
-    return <span className="video-placeholder">{t('No video', 'لا يوجد فيديو')}</span>;
+    return <span className="video-placeholder">{t('No video', 'لا يوجد فيديو', 'Sin video')}</span>;
   }
 
   const openInlineModal = () => {
@@ -62,7 +62,9 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
         onClick={openInlineModal}
         aria-label={language === 'ar'
           ? `تشغيل فيديو ${title}`
-          : `Play ${title} video`}
+          : language === 'es'
+            ? `Reproducir video de ${title}`
+            : `Play ${title} video`}
       >
         <span aria-hidden="true">▶</span>
       </button>

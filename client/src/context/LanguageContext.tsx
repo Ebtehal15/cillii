@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 
-export type SupportedLanguage = 'en' | 'ar';
+export type SupportedLanguage = 'en' | 'ar' | 'es';
 
 interface LanguageContextValue {
   language: SupportedLanguage;
@@ -24,7 +24,7 @@ const getInitialLanguage = (): SupportedLanguage => {
     return 'en';
   }
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === 'ar' ? 'ar' : 'en';
+  return stored === 'ar' || stored === 'es' ? stored : 'en';
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
@@ -39,10 +39,22 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
   }, [language]);
 
+  const cycleLanguage = () => {
+    setLanguage((prev) => {
+      if (prev === 'en') {
+        return 'ar';
+      }
+      if (prev === 'ar') {
+        return 'es';
+      }
+      return 'en';
+    });
+  };
+
   const value = useMemo<LanguageContextValue>(() => ({
     language,
     setLanguage: (next: SupportedLanguage) => setLanguage(next),
-    toggleLanguage: () => setLanguage((prev) => (prev === 'en' ? 'ar' : 'en')),
+    toggleLanguage: cycleLanguage,
   }), [language]);
 
   return (

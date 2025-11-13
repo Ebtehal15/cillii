@@ -71,6 +71,7 @@ button {
 .nav__links {
   display: flex;
   gap: 1.2rem;
+  align-items: center;
 }
 
 .nav__link {
@@ -91,20 +92,39 @@ button {
   box-shadow: 0 16px 32px rgba(124, 58, 237, 0.35);
 }
 
-.nav__lang {
-  border: none;
-  border-radius: 999px;
-  padding: 0.6rem 1rem;
-  font-weight: 600;
-  background: rgba(248, 251, 255, 0.15);
-  color: #f8fbff;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+.nav__lang-group {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
 }
 
-.nav__lang:hover {
-  background: rgba(248, 251, 255, 0.3);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+.nav__lang-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.15);
+  color: #f8fbff;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+
+.nav__lang-btn--active {
+  background: linear-gradient(135deg, #38bdf8, #7c3aed);
+  color: #0f172a;
+  box-shadow: 0 12px 24px rgba(124, 58, 237, 0.35);
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+.nav__lang-btn:hover:not(.nav__lang-btn--active) {
+  background: rgba(248, 251, 255, 0.25);
   transform: translateY(-1px);
+  border-color: rgba(248, 251, 255, 0.4);
 }
 
 .main-content {

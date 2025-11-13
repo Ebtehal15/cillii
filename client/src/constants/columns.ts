@@ -5,38 +5,47 @@ const columnLabelMap: Record<ColumnKey, Record<SupportedLanguage, string>> = {
   specialId: {
     en: 'Special ID',
     ar: 'كود الصنف',
+    es: 'ID Especial',
   },
   mainCategory: {
     en: 'Main Category',
     ar: 'الفئة الرئيسية',
+    es: 'Categoría Principal',
   },
   quality: {
     en: 'Group',
     ar: 'المجموعة',
+    es: 'Grupo',
   },
   className: {
     en: 'Class Name',
     ar: 'اسم الصنف',
+    es: 'Nombre del Producto',
   },
   classNameArabic: {
     en: 'Class Name (Arabic)',
     ar: 'اسم الصنف (عربي)',
+    es: 'Nombre (Árabe)',
   },
   classFeatures: {
     en: 'Features',
     ar: 'المميزات',
+    es: 'Características',
   },
   classWeight: {
     en: 'Weight (kg)',
     ar: 'الوزن (كجم)',
+    es: 'Peso (kg)',
   },
   classPrice: {
     en: 'Price',
     ar: 'السعر',
+    es: 'Precio',
   },
   classVideo: {
     en: 'Video',
     ar: 'فيديو',
+    es: 'Video',
   },
 };
 

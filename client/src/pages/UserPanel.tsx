@@ -63,15 +63,18 @@ const UserPanel = () => {
       case 'classNameArabic':
         return item.classNameArabic || '—';
       case 'classFeatures':
-        return item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.');
+        return item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.', 'Aún no se han añadido características.');
       case 'classWeight':
         return item.classWeight !== null && item.classWeight !== undefined
           ? `${item.classWeight.toFixed(2)} kg`
           : '—';
       case 'classPrice':
-        return item.classPrice !== null && item.classPrice !== undefined
-          ? `$${item.classPrice.toFixed(2)}`
-          : t('Price on request', 'السعر عند الطلب');
+        if (item.classPrice !== null && item.classPrice !== undefined) {
+          const price = item.classPrice;
+          const formatted = Number.isInteger(price) ? price.toFixed(0) : price.toFixed(2).replace(/\.?0+$/, '');
+          return `$${formatted}`;
+        }
+        return t('Price on request', 'السعر عند الطلب', 'Precio a solicitud');
       case 'classVideo':
         return (
           <VideoPreview
@@ -101,29 +104,29 @@ const UserPanel = () => {
     <section className="panel catalog-panel">
       <div className="card catalog-filters">
         <div className="catalog-filters__header">
-          <h2>{t('Search & Filters', 'البحث والتصفية')}</h2>
-          <p>{t('Use flexible filters to focus on the categories and groups that fit the brief.', 'استخدم خيارات التصفية للتركيز على الفئات المناسبة.')}</p>
+          <h2>{t('Search & Filters', 'البحث والتصفية', 'Búsqueda y Filtros')}</h2>
+          <p>{t('Use flexible filters to focus on the categories and groups that fit the brief.', 'استخدم خيارات التصفية للتركيز على الفئات المناسبة.', 'Utiliza filtros flexibles para enfocarte en las categorías y grupos adecuados.')}</p>
         </div>
         <div className="catalog-filters__grid">
           <label>
-            {t('Search', 'بحث')}
+            {t('Search', 'بحث', 'Buscar')}
             <input
               type="search"
               name="search"
               value={filters.search ?? ''}
               onChange={handleFilterChange}
-              placeholder={t('Search by ID or class name', 'ابحث بالرمز أو اسم الصنف')}
+              placeholder={t('Search by ID or class name', 'ابحث بالرمز أو اسم الصنف', 'Buscar por ID o nombre del producto')}
             />
           </label>
 
           <label>
-            {t('Group', 'المجموعة')}
+            {t('Group', 'المجموعة', 'Grupo')}
             <select
               name="quality"
               value={filters.quality ?? ''}
               onChange={handleFilterChange}
             >
-              <option value="">{t('All', 'الكل')}</option>
+              <option value="">{t('All', 'الكل', 'Todos')}</option>
               {groups.map((group) => (
                 <option key={group} value={group}>{group}</option>
               ))}
@@ -132,16 +135,16 @@ const UserPanel = () => {
         </div>
         <div className="catalog-filters__actions">
           <button type="button" className="secondary" onClick={handleClearFilters}>
-            {t('Clear Filters', 'إزالة الفلترة')}
+            {t('Clear Filters', 'إزالة الفلترة', 'Limpiar filtros')}
           </button>
         </div>
       </div>
 
-      {isLoading && <p>{t('Loading catalog...', 'جاري تحميل الكتالوج...')}</p>}
-      {error && <p className="alert alert--error">{t('Failed to load catalog.', 'تعذر تحميل الكتالوج.')}</p>}
+      {isLoading && <p>{t('Loading catalog...', 'جاري تحميل الكتالوج...', 'Cargando catálogo...')}</p>}
+      {error && <p className="alert alert--error">{t('Failed to load catalog.', 'تعذر تحميل الكتالوج.', 'No se pudo cargar el catálogo.')}</p>}
       {!isLoading && !classes.length && (
         <div className="card">
-          <p>{t('No products available yet. Please check back later.', 'لا توجد منتجات حالياً. يرجى العودة لاحقاً.')}</p>
+          <p>{t('No products available yet. Please check back later.', 'لا توجد منتجات حالياً. يرجى العودة لاحقاً.', 'No hay productos disponibles todavía. Vuelve más tarde.')}</p>
         </div>
       )}
 
@@ -149,8 +152,8 @@ const UserPanel = () => {
         <div className="card catalog-table">
           <div className="catalog-table__header">
             <div>
-              <h2>{t('Available Classes', 'الأصناف المتاحة')}</h2>
-              <p>{t('High-level overview of every class, organised for quick reference during buyer sessions.', ' نظرة شاملة على جميع الأصناف .')}</p>
+              <h2>{t('Available Classes', 'الأصناف المتاحة', 'Productos Disponibles')}</h2>
+              <p>{t('High-level overview of every class, organised for quick reference during buyer sessions.', ' نظرة شاملة على جميع الأصناف .', 'Resumen detallado de cada producto, organizado para una consulta rápida durante las sesiones de compra.')}</p>
             </div>
           </div>
           <div className="catalog-view-toggle" role="group" aria-label="View mode">
@@ -160,7 +163,7 @@ const UserPanel = () => {
               aria-pressed={viewMode === 'table'}
               onClick={() => setViewMode('table')}
             >
-              {t('Table', 'جدول')}
+              {t('Table', 'جدول', 'Tabla')}
             </button>
             <button
               type="button"
@@ -168,7 +171,7 @@ const UserPanel = () => {
               aria-pressed={viewMode === 'cards'}
               onClick={() => setViewMode('cards')}
             >
-              {t('Cards', 'بطاقات')}
+              {t('Cards', 'بطاقات', 'Tarjetas')}
             </button>
           </div>
           {viewMode === 'table' ? (
@@ -197,47 +200,57 @@ const UserPanel = () => {
               {classes.map((item) => (
                 <article key={item.id} className="catalog-card">
                   <header className="catalog-card__header">
-                    <span className="catalog-card__id">{item.specialId}</span>
-                    <h3>
-                      {language === 'ar' && item.classNameArabic
-                        ? item.classNameArabic
-                        : item.className}
-                    </h3>
-                  <p>{item.quality || '—'}</p>
+                    {columnVisibility.specialId && (
+                      <span className="catalog-card__id">
+                        {renderCell(item, 'specialId')}
+                      </span>
+                    )}
+                    {columnVisibility.className && (
+                      <h3>
+                        {language === 'ar' && item.classNameArabic
+                          ? item.classNameArabic
+                          : (renderCell(item, 'className') as React.ReactNode)}
+                      </h3>
+                    )}
+                    {columnVisibility.quality && (
+                      <p>{renderCell(item, 'quality')}</p>
+                    )}
                   </header>
                   <dl>
-                    <div>
-                      <dt>{t('Main Category', 'الفئة الرئيسية')}</dt>
-                      <dd>{item.mainCategory || '—'}</dd>
-                    </div>
-                  <div>
-                    <dt>{t('Features', 'المميزات')}</dt>
-                    <dd>{item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.')}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('Weight', 'الوزن')}</dt>
-                    <dd>
-                      {item.classWeight !== null && item.classWeight !== undefined
-                        ? `${item.classWeight.toFixed(2)} kg`
-                        : '—'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t('Price', 'السعر')}</dt>
-                    <dd>
-                      {item.classPrice !== null && item.classPrice !== undefined
-                        ? `$${item.classPrice.toFixed(2)}`
-                        : t('Price on request', 'السعر عند الطلب')}
-                    </dd>
-                  </div>
+                    {columnVisibility.mainCategory && (
+                      <div>
+                        <dt>{t('Main Category', 'الفئة الرئيسية', 'Categoría Principal')}</dt>
+                        <dd>{renderCell(item, 'mainCategory')}</dd>
+                      </div>
+                    )}
+                    {columnVisibility.classFeatures && (
+                      <div>
+                        <dt>{t('Features', 'المميزات', 'Características')}</dt>
+                        <dd>{renderCell(item, 'classFeatures')}</dd>
+                      </div>
+                    )}
+                    {columnVisibility.classWeight && (
+                      <div>
+                        <dt>{t('Weight', 'الوزن', 'Peso')}</dt>
+                        <dd>{renderCell(item, 'classWeight')}</dd>
+                      </div>
+                    )}
+                    {columnVisibility.classPrice && (
+                      <div>
+                        <dt>{t('Price', 'السعر', 'Precio')}</dt>
+                        <dd>{renderCell(item, 'classPrice')}</dd>
+                      </div>
+                    )}
                   </dl>
-                  <VideoPreview
-                    src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
-                    title={language === 'ar' && item.classNameArabic
-                      ? item.classNameArabic
-                      : item.className}
-                  variant="icon"
-                  />
+                  {columnVisibility.classVideo && (
+                    <VideoPreview
+                      src={item.classVideo ? `${API_BASE_URL}${item.classVideo}` : null}
+                      title={language === 'ar' && item.classNameArabic
+                        ? item.classNameArabic
+                        : item.className}
+                      variant="icon"
+                    />
+                  )}
                 </article>
               ))}
             </div>
