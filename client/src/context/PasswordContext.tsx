@@ -48,11 +48,17 @@ export const PasswordProvider = ({ children }: ProviderProps) => {
   }, [role]);
 
   const authorize = useCallback((password: string): boolean => {
-    const userPassword = import.meta.env.VITE_USER_PASSWORD ?? DEFAULT_USER_PASSWORD;
+    const envUserPassword = import.meta.env.VITE_USER_PASSWORD;
+    const userPassword = envUserPassword ?? DEFAULT_USER_PASSWORD;
     const adminPassword = import.meta.env.VITE_ADMIN_PASSCODE ?? DEFAULT_ADMIN_PASSWORD;
 
     if (password.trim() === adminPassword) {
       setRole('admin');
+      return true;
+    }
+    // If user password is empty/not set in env, allow empty password for user access
+    if ((!envUserPassword || envUserPassword.trim() === '') && password.trim() === '') {
+      setRole('user');
       return true;
     }
     if (password.trim() === userPassword) {
@@ -86,5 +92,6 @@ export const usePassword = (): PasswordContextValue => {
   }
   return context;
 };
+
 
 

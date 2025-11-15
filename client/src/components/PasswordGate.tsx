@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePassword } from '../context/PasswordContext';
@@ -14,6 +14,18 @@ const PasswordGate = ({ children }: PasswordGateProps) => {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Automatically grant user access if no password is required
+  useEffect(() => {
+    if (role === 'none') {
+      const envUserPassword = import.meta.env.VITE_USER_PASSWORD;
+      // If user password is empty or not set, automatically grant user access
+      if (!envUserPassword || envUserPassword.trim() === '') {
+        authorize('');
+        navigate('/catalog');
+      }
+    }
+  }, [role, authorize, navigate]);
 
   if (role !== 'none') {
     return <>{children}</>;

@@ -315,7 +315,7 @@ const UserPanel = () => {
                         if (language === 'en' && item.classNameEnglish) return item.classNameEnglish;
                         return item.className;
                       })()}
-                      variant="icon"
+                      variant="card"
                     />
                   )}
                 </article>

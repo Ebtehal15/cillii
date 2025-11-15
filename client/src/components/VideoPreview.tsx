@@ -3,7 +3,7 @@ import useTranslate from '../hooks/useTranslate';
 interface VideoPreviewProps {
   src?: string | null;
   title: string;
-  variant?: 'inline' | 'icon';
+  variant?: 'inline' | 'icon' | 'card';
 }
 
 const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => {
@@ -110,6 +110,62 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
       >
         <span aria-hidden="true">▶</span>
       </button>
+    );
+  }
+
+  if (variant === 'card') {
+    if (!src) {
+      return (
+        <div className="video-card-placeholder">
+          {t('No video', 'لا يوجد فيديو', 'Sin video')}
+        </div>
+      );
+    }
+
+    // Get thumbnail URL for YouTube
+    const getYouTubeThumbnail = (url: string) => {
+      const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+      if (match && match[1]) {
+        return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+      }
+      return null;
+    };
+
+    // Get thumbnail URL for Streamable
+    const getStreamableThumbnail = (url: string) => {
+      const match = url.match(/streamable\.com\/([a-z0-9]+)/i);
+      if (match && match[1]) {
+        return `https://cdn-cf-east.streamable.com/image/${match[1]}.jpg`;
+      }
+      return null;
+    };
+
+    const thumbnailUrl = isYouTube 
+      ? getYouTubeThumbnail(src)
+      : isStreamable
+        ? getStreamableThumbnail(src)
+        : null;
+
+    return (
+      <div className="video-card-preview" onClick={openInlineModal}>
+        {thumbnailUrl ? (
+          <div className="video-card-thumbnail">
+            <img src={thumbnailUrl} alt={title} />
+            <div className="video-card-play-button">
+              <span>▶</span>
+            </div>
+          </div>
+        ) : (
+          <div className="video-card-thumbnail video-card-thumbnail--video">
+            <video preload="metadata" muted>
+              <source src={src} />
+            </video>
+            <div className="video-card-play-button">
+              <span>▶</span>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
