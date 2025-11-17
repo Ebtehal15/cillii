@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useClasses } from '../hooks/useClasses';
@@ -47,6 +47,7 @@ const UserPanel = () => {
   const { data: allClasses = [] } = useClasses();
   const { data: classes = [], isLoading, error } = useClasses(filters);
   const { language, t } = useTranslate();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Ekran boyutu değiştiğinde görünümü otomatik güncelle (sadece kullanıcı manuel seçim yapmadıysa)
   useEffect(() => {
@@ -152,6 +153,13 @@ const UserPanel = () => {
       ...prev,
       [name]: value || undefined,
     }));
+    
+    // On mobile, scroll to results when filter changes
+    if (window.innerWidth <= 768 && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const handleClearFilters = () => {
@@ -218,7 +226,7 @@ const UserPanel = () => {
       )}
 
       {!isLoading && classes.length > 0 && (
-        <div className="card catalog-table">
+        <div className="card catalog-table" ref={resultsRef}>
           <div className="catalog-table__header">
             <div>
               <h2>{t('Available Classes', 'الأصناف المتاحة', 'Productos Disponibles')}</h2>

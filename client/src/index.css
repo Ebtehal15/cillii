@@ -1402,6 +1402,20 @@ tbody tr:hover {
     padding: 1.4rem;
   }
 
+  .catalog-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .catalog-filters {
+    margin-bottom: 0;
+  }
+
+  .catalog-table {
+    margin-top: 0;
+  }
+
   .catalog-card-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
