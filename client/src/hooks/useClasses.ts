@@ -4,8 +4,8 @@ import type { ClassFilters } from '../types';
 
 export const CLASSES_QUERY_KEY = 'classes';
 
-export const useClasses = (filters: ClassFilters = {}) => useQuery({
-  queryKey: [CLASSES_QUERY_KEY, filters],
-  queryFn: () => fetchClasses(filters),
+export const useClasses = (filters?: ClassFilters) => useQuery({
+  queryKey: [CLASSES_QUERY_KEY, filters ?? 'all'],
+  queryFn: () => fetchClasses(filters ?? {}),
 });
 

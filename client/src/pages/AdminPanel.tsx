@@ -83,9 +83,10 @@ const AdminPanel = () => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [bulkReport, setBulkReport] = useState<BulkUploadResult | null>(null);
   const [updateOnly, setUpdateOnly] = useState(false);
-  const [expandedPanel, setExpandedPanel] = useState<'video' | 'price' | 'arabic' | 'english' | null>(null);
+  const [expandedPanel, setExpandedPanel] = useState<'video' | 'price' | 'arabic' | 'english' | 'name' | null>(null);
 
   const queryClient = useQueryClient();
+  const { data: allClasses = [] } = useClasses();
   const { data: classes = [], isLoading, error } = useClasses(filters);
   const { language, t } = useTranslate();
   const sanitizedVideoInput = formState.classVideoUrl.trim();
@@ -136,23 +137,23 @@ const AdminPanel = () => {
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
-    classes.forEach((item) => {
+    allClasses.forEach((item) => {
       if (item.mainCategory) {
         set.add(item.mainCategory);
       }
     });
     return Array.from(set).sort();
-  }, [classes]);
+  }, [allClasses]);
 
   const groups = useMemo<string[]>(() => {
     const set = new Set<string>();
-    classes.forEach((item) => {
+    allClasses.forEach((item) => {
       if (item.quality) {
         set.add(item.quality);
       }
     });
     return Array.from(set).sort();
-  }, [classes]);
+  }, [allClasses]);
 
   const totalVideos = useMemo(() => classes.filter((item) => item.classVideo).length, [classes]);
 
@@ -160,6 +161,7 @@ const AdminPanel = () => {
   const classesWithoutPrice = useMemo(() => classes.filter((item) => item.classPrice === null || item.classPrice === undefined), [classes]);
   const classesWithoutArabic = useMemo(() => classes.filter((item) => !item.classNameArabic || item.classNameArabic.trim() === ''), [classes]);
   const classesWithoutEnglish = useMemo(() => classes.filter((item) => !item.classNameEnglish || item.classNameEnglish.trim() === ''), [classes]);
+  const classesWithoutName = useMemo(() => classes.filter((item) => !item.className || item.className.trim() === ''), [classes]);
   const activeColumnCount = useMemo(
     () => Object.values(columnVisibility).filter(Boolean).length,
     [columnVisibility],
@@ -779,6 +781,14 @@ const AdminPanel = () => {
             <span>{classesWithoutEnglish.length}</span>
             <p>{t('Without English Translation', 'بلا ترجمة إنجليزية', 'Sin Traducción Inglesa')}</p>
           </div>
+          <div 
+            className={`admin-stat admin-stat--warning ${expandedPanel === 'name' ? 'admin-stat--active' : ''}`}
+            style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+            onClick={() => setExpandedPanel(expandedPanel === 'name' ? null : 'name')}
+          >
+            <span>{classesWithoutName.length}</span>
+            <p>{t('Missing Class Name', 'بدون اسم صنف', 'Sin Nombre de Producto')}</p>
+          </div>
         </div>
         {missingVideoClasses.length > 0 && expandedPanel === 'video' && (
           <div className="admin-stats__missing admin-stats__missing--expanded">
@@ -904,6 +914,37 @@ const AdminPanel = () => {
                   >
                     <span className="admin-stats__missing-name">
                       {language === 'ar' && item.classNameArabic ? item.classNameArabic : item.className}
+                    </span>
+                    <span className="admin-stats__missing-id">{item.specialId}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+        {classesWithoutName.length > 0 && expandedPanel === 'name' && (
+          <div className="admin-stats__missing admin-stats__missing--expanded">
+            <div className="admin-stats__toggle">
+              <span>
+                {t('Classes without name', 'أصناف بلا اسم', 'Productos sin nombre')}
+                {' '}
+                ({classesWithoutName.length})
+              </span>
+              <span aria-hidden="true">−</span>
+            </div>
+            <div className="admin-stats__missing-panel">
+              <ul>
+                {classesWithoutName.map((item) => (
+                  <li 
+                    key={item.id}
+                    onClick={() => {
+                      handleEdit(item);
+                      setExpandedPanel(null);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="admin-stats__missing-name">
+                      {t('Unnamed class', 'صنف بدون اسم', 'Producto sin nombre')}
                     </span>
                     <span className="admin-stats__missing-id">{item.specialId}</span>
                   </li>

@@ -44,6 +44,7 @@ const UserPanel = () => {
   const [filters, setFilters] = useState<ClassFilters>({});
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
   const [userHasSelected, setUserHasSelected] = useState(false);
+  const { data: allClasses = [] } = useClasses();
   const { data: classes = [], isLoading, error } = useClasses(filters);
   const { language, t } = useTranslate();
 
@@ -80,13 +81,13 @@ const UserPanel = () => {
 
   const groups = useMemo<string[]>(() => {
     const set = new Set<string>();
-    classes.forEach((item) => {
+    allClasses.forEach((item) => {
       if (item.quality) {
         set.add(item.quality);
       }
     });
     return Array.from(set).sort();
-  }, [classes]);
+  }, [allClasses]);
 
   const columnVisibilityQuery = useQuery({
     queryKey: ['columnVisibility'],
@@ -275,16 +276,12 @@ const UserPanel = () => {
                 <article key={item.id} className="catalog-card">
                   <div className="catalog-card__content">
                     <header className="catalog-card__header">
-                      {columnVisibility.specialId && (
-                        <span className="catalog-card__id">
-                          {renderCell(item, 'specialId')}
-                        </span>
-                      )}
-                      {columnVisibility.className && (
-                        <h3>
-                          {renderCell(item, 'className') as React.ReactNode}
-                        </h3>
-                      )}
+                      <span className="catalog-card__id">
+                        {renderCell(item, 'specialId')}
+                      </span>
+                      <h3>
+                        {renderCell(item, 'className') as React.ReactNode}
+                      </h3>
                       {columnVisibility.quality && (
                         <p>{renderCell(item, 'quality')}</p>
                       )}
