@@ -83,7 +83,7 @@ const AdminPanel = () => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [bulkReport, setBulkReport] = useState<BulkUploadResult | null>(null);
   const [updateOnly, setUpdateOnly] = useState(false);
-  const [expandedPanel, setExpandedPanel] = useState<'video' | 'price' | 'arabic' | 'english' | 'name' | null>(null);
+  const [expandedPanel, setExpandedPanel] = useState<'video' | 'price' | 'arabic' | 'english' | 'name' | 'withVideo' | null>(null);
 
   const queryClient = useQueryClient();
   const { data: allClasses = [] } = useClasses();
@@ -156,6 +156,7 @@ const AdminPanel = () => {
   }, [allClasses]);
 
   const totalVideos = useMemo(() => classes.filter((item) => item.classVideo).length, [classes]);
+  const classesWithVideo = useMemo(() => classes.filter((item) => item.classVideo), [classes]);
 
   const missingVideoClasses = useMemo(() => classes.filter((item) => !item.classVideo), [classes]);
   const classesWithoutPrice = useMemo(() => classes.filter((item) => item.classPrice === null || item.classPrice === undefined), [classes]);
@@ -745,7 +746,11 @@ const AdminPanel = () => {
             <span>{groups.length}</span>
             <p>{t('Groups', 'المجموعات', 'Grupos')}</p>
           </div>
-          <div className="admin-stat">
+          <div 
+            className={`admin-stat ${expandedPanel === 'withVideo' ? 'admin-stat--active' : ''}`}
+            style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+            onClick={() => setExpandedPanel(expandedPanel === 'withVideo' ? null : 'withVideo')}
+          >
             <span>{totalVideos}</span>
             <p>{t('Videos Uploaded', 'عدد مقاطع الفيديو', 'Videos Subidos')}</p>
           </div>
@@ -790,6 +795,41 @@ const AdminPanel = () => {
             <p>{t('Missing Class Name', 'بدون اسم صنف', 'Sin Nombre de Producto')}</p>
           </div>
         </div>
+        {classesWithVideo.length > 0 && expandedPanel === 'withVideo' && (
+          <div className="admin-stats__missing admin-stats__missing--expanded">
+            <div className="admin-stats__toggle">
+              <span>
+                {t('Classes with video', 'أصناف مع فيديو', 'Productos con video')}
+                {' '}
+                ({classesWithVideo.length})
+              </span>
+              <span aria-hidden="true">−</span>
+            </div>
+            <div className="admin-stats__missing-panel">
+              <ul>
+                {classesWithVideo.map((item) => (
+                  <li 
+                    key={item.id}
+                    onClick={() => {
+                      handleEdit(item);
+                      setExpandedPanel(null);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="admin-stats__missing-name">
+                      {(() => {
+                        if (language === 'ar' && item.classNameArabic) return item.classNameArabic;
+                        if (language === 'en' && item.classNameEnglish) return item.classNameEnglish;
+                        return item.className;
+                      })()}
+                    </span>
+                    <span className="admin-stats__missing-id">{item.specialId}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
         {missingVideoClasses.length > 0 && expandedPanel === 'video' && (
           <div className="admin-stats__missing admin-stats__missing--expanded">
             <div className="admin-stats__toggle">
