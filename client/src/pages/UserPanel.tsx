@@ -125,6 +125,10 @@ const UserPanel = () => {
         return item.classFeatures || t('No features provided yet.', 'لم يتم إضافة المزايا بعد.', 'Aún no se han añadido características.');
       case 'classWeight':
         return formatNumber(item.classWeight, 'kg');
+      case 'classQuantity':
+        return item.classQuantity !== null && item.classQuantity !== undefined
+          ? String(item.classQuantity)
+          : '—';
       case 'classPrice':
         if (item.classPrice !== null && item.classPrice !== undefined) {
           return `$${formatNumber(item.classPrice)}`;
@@ -217,11 +221,30 @@ const UserPanel = () => {
         </div>
       </div>
 
-      {isLoading && <p>{t('Loading catalog...', 'جاري تحميل الكتالوج...', 'Cargando catálogo...')}</p>}
-      {error && <p className="alert alert--error">{t('Failed to load catalog.', 'تعذر تحميل الكتالوج.', 'No se pudo cargar el catálogo.')}</p>}
-      {!isLoading && !classes.length && (
-        <div className="card">
-          <p>{t('No products available yet. Please check back later.', 'لا توجد منتجات حالياً. يرجى العودة لاحقاً.', 'No hay productos disponibles todavía. Vuelve más tarde.')}</p>
+      {isLoading && (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+          <p style={{ fontSize: '1.1rem', color: '#64748b', margin: 0 }}>
+            {t('Loading catalog...', 'جاري تحميل الكتالوج...', 'Cargando catálogo...')}
+          </p>
+        </div>
+      )}
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', border: '2px solid #fecaca', padding: '1.5rem' }}>
+          <p style={{ color: '#dc2626', margin: 0, fontWeight: 600 }}>
+            {t('Failed to load catalog.', 'تعذر تحميل الكتالوج.', 'No se pudo cargar el catálogo.')}
+          </p>
+        </div>
+      )}
+      {!isLoading && !error && !classes.length && (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#1e293b' }}>
+            {t('No products found', 'لم يتم العثور على منتجات', 'No se encontraron productos')}
+          </h3>
+          <p style={{ color: '#64748b', margin: 0 }}>
+            {t('Try adjusting your filters to see more results.', 'جرب تعديل الفلاتر لرؤية المزيد من النتائج.', 'Intenta ajustar tus filtros para ver más resultados.')}
+          </p>
         </div>
       )}
 
@@ -230,7 +253,7 @@ const UserPanel = () => {
           <div className="catalog-table__header">
             <div>
               <h2>{t('Available Classes', 'الأصناف المتاحة', 'Productos Disponibles')}</h2>
-              <p>{t('High-level overview of every class, organised for quick reference during buyer sessions.', ' نظرة شاملة على جميع الأصناف .', 'Resumen detallado de cada producto, organizado para una consulta rápida durante las sesiones de compra.')}</p>
+              <p>{t('High-level overview of every class.', ' نظرة شاملة على جميع الأصناف .', 'Resumen detallado de cada producto.')}</p>
             </div>
           </div>
           <div className="catalog-view-toggle" role="group" aria-label="View mode">
@@ -311,6 +334,12 @@ const UserPanel = () => {
                         <div>
                           <dt>{t('Weight', 'الوزن', 'Peso')}</dt>
                           <dd>{formatNumber(item.classWeight, 'kg')}</dd>
+                        </div>
+                      )}
+                      {columnVisibility.classQuantity && (
+                        <div>
+                          <dt>{t('Quantity', 'الكمية', 'Cantidad')}</dt>
+                          <dd>{item.classQuantity !== null && item.classQuantity !== undefined ? String(item.classQuantity) : '—'}</dd>
                         </div>
                       )}
                       {columnVisibility.classPrice && (

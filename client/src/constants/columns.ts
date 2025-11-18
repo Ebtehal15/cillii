@@ -42,6 +42,11 @@ const columnLabelMap: Record<ColumnKey, Record<SupportedLanguage, string>> = {
     ar: 'الوزن (كجم)',
     es: 'Peso (kg)',
   },
+  classQuantity: {
+    en: 'Quantity',
+    ar: 'الكمية',
+    es: 'Cantidad',
+  },
   classPrice: {
     en: 'Price',
     ar: 'السعر',
@@ -76,6 +81,7 @@ export const orderedColumns: ColumnKey[] = [
   'classNameEnglish',
   'classFeatures',
   'classWeight',
+  'classQuantity',
   'classPrice',
   'classVideo',
 ];

@@ -9,6 +9,7 @@ export interface ClassRecord {
   classFeatures: string | null;
   classPrice: number | null;
   classWeight: number | null;
+  classQuantity: number | null;
   classVideo: string | null;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +26,7 @@ export interface ClassFilters {
   codeSearch?: string;
   category?: string;
   quality?: string;
+  includeZeroQuantity?: boolean;
 }
 
 export type ColumnKey =
@@ -36,6 +38,7 @@ export type ColumnKey =
   | 'classNameEnglish'
   | 'classFeatures'
   | 'classWeight'
+  | 'classQuantity'
   | 'classPrice'
   | 'classVideo';
 
