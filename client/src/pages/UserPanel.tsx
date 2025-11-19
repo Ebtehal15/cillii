@@ -133,7 +133,7 @@ const UserPanel = () => {
         if (item.classPrice !== null && item.classPrice !== undefined) {
           return `$${formatNumber(item.classPrice)}`;
         }
-        return t('Price on request', 'السعر عند الطلب', 'Precio a solicitud');
+        return '';
       case 'classVideo':
         return (
           <VideoPreview
@@ -307,12 +307,12 @@ const UserPanel = () => {
                 <article key={item.id} className="catalog-card">
                   <div className="catalog-card__content">
                     <header className="catalog-card__header">
-                      <span className="catalog-card__id">
-                        {renderCell(item, 'specialId')}
-                      </span>
-                      <h3>
-                        {renderCell(item, 'className') as React.ReactNode}
-                      </h3>
+                        <span className="catalog-card__id">
+                          {renderCell(item, 'specialId')}
+                        </span>
+                        <h3>
+                          {renderCell(item, 'className') as React.ReactNode}
+                        </h3>
                       {columnVisibility.quality && (
                         <p>{renderCell(item, 'quality')}</p>
                       )}

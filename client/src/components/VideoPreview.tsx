@@ -108,7 +108,18 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
             ? `Reproducir video de ${title}`
             : `Play ${title} video`}
       >
-        <span aria-hidden="true">▶</span>
+        <svg
+          className="video-button__icon"
+          viewBox="0 0 24 24"
+          role="presentation"
+          focusable="false"
+          aria-hidden="true"
+        >
+          <path
+            d="M8 5.5v13l10-6.5-10-6.5z"
+            fill="currentColor"
+          />
+        </svg>
       </button>
     );
   }
