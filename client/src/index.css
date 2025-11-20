@@ -149,18 +149,18 @@ button {
 }
 
 .nav__link:hover::before {
-  opacity: 1;
+  opacity: 0;
 }
 
 .nav__link--active {
   background: linear-gradient(135deg, rgba(208, 170, 27, 0.15), rgba(203, 145, 31, 0.15));
   color: var(--color-primary-light);
-  border: 1px solid rgba(208, 170, 27, 0.3);
+  border: none;
   box-shadow: 0 2px 8px rgba(208, 170, 27, 0.2);
 }
 
 .nav__link--active::before {
-  opacity: 1;
+  opacity: 0;
 }
 
 .nav__lang-group {
