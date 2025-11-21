@@ -127,6 +127,7 @@ const AdminPanel = () => {
     mutationFn: updateColumnVisibility,
     onSuccess: (data) => {
       queryClient.setQueryData(['columnVisibility'], data);
+      queryClient.invalidateQueries({ queryKey: ['columnVisibility'] });
     },
     onError: (mutationError) => {
       setErrorFeedback(extractErrorMessage(mutationError));
@@ -1181,9 +1182,6 @@ const AdminPanel = () => {
               <div className="table-card__filter-actions">
                 <button type="button" className="secondary" onClick={handleClearFilters}>
                   {t('Clear Filters', 'إزالة الفلترة', 'Limpiar filtros')}
-                </button>
-                <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] })}>
-                  {t('Refresh', 'تحديث', 'Actualizar')}
                 </button>
               </div>
             </div>

@@ -11,16 +11,25 @@ const DEFAULT_VISIBILITY = {
   quality: true,
   className: true,
   classNameArabic: false,
+  classNameEnglish: false,
   classFeatures: true,
   classWeight: true,
+  classQuantity: true,
   classPrice: true,
   classVideo: true,
 };
 
 const normalizeVisibility = (visibility = {}) => {
   const normalized = { ...DEFAULT_VISIBILITY };
+  // Update values from the provided visibility object
   Object.keys(DEFAULT_VISIBILITY).forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(visibility, key)) {
+      normalized[key] = Boolean(visibility[key]);
+    }
+  });
+  // Also preserve any additional keys from visibility that might be in the client's column list
+  Object.keys(visibility).forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(DEFAULT_VISIBILITY, key)) {
       normalized[key] = Boolean(visibility[key]);
     }
   });
