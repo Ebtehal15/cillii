@@ -15,8 +15,27 @@ const app = express();
 
 // 🔹 Genel Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || ['http://localhost:5173', 'https://cillii-1.onrender.com'],
-  credentials: true, // Session cookie'leri için gerekli
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000', 
+      'https://cillii-1.onrender.com',
+      process.env.CLIENT_URL
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
