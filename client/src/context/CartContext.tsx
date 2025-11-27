@@ -4,13 +4,15 @@ import {
   useContext,
   useState,
   useEffect,
+  useMemo,
   type ReactNode,
 } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ClassRecord, CartItem } from '../types';
 import * as cartApi from '../api/cart';
 import { LocalStorageCart, type LocalCartItem } from '../api/localStorage-cart';
 import type { CartResponse } from '../api/cart';
+import apiClient from '../api/client';
 
 interface CartContextValue {
   items: CartResponse['items'];
@@ -28,6 +30,7 @@ const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [localCartItems, setLocalCartItems] = useState<LocalCartItem[]>([]);
+  const [enrichedCartItems, setEnrichedCartItems] = useState<CartItem[]>([]);
   const [isLoading] = useState(false);
 
   // LocalStorage'dan cart'ı yükle
@@ -36,6 +39,41 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setLocalCartItems(items);
     console.log('📦 LocalStorage cart loaded:', items);
   }, []);
+
+  // LocalStorage item'larını product bilgileriyle zenginleştir
+  const { data: allClasses } = useQuery<ClassRecord[]>({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const response = await apiClient.get<ClassRecord[]>('/api/classes');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 dakika cache
+  });
+
+  // LocalStorage cart'ını gerçek product bilgileriyle zenginleştir
+  useEffect(() => {
+    if (!allClasses || localCartItems.length === 0) {
+      setEnrichedCartItems([]);
+      return;
+    }
+
+    const enriched: CartItem[] = localCartItems
+      .map(localItem => {
+        const record = allClasses.find(cls => cls.id === localItem.classId);
+        if (!record) {
+          console.warn('Product not found for classId:', localItem.classId);
+          return null;
+        }
+        return {
+          record,
+          quantity: localItem.quantity
+        };
+      })
+      .filter((item): item is CartItem => item !== null);
+
+    setEnrichedCartItems(enriched);
+    console.log('✨ Cart enriched with product data:', enriched);
+  }, [localCartItems, allClasses]);
 
   // LocalStorage'dan cart'ı yükle
   useEffect(() => {
@@ -156,17 +194,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await clearCartMutation.mutateAsync();
   }, [clearCartMutation]);
 
-  // LocalCartItem'ları CartItem'lara dönüştür (geçici çözüm)
-  const cartItems: CartItem[] = localCartItems.map(item => ({
-    record: { id: item.classId } as any, // Geçici type assertion
-    quantity: item.quantity
-  }));
+  // Toplam tutarı hesapla
+  const { knownTotal, hasUnknownPrices } = useMemo(() => {
+    let total = 0;
+    let hasUnknown = false;
+
+    enrichedCartItems.forEach(item => {
+      if (item.record.classPrice !== null && item.record.classPrice !== undefined) {
+        total += item.record.classPrice * item.quantity;
+      } else {
+        hasUnknown = true;
+      }
+    });
+
+    return { knownTotal: total, hasUnknownPrices: hasUnknown };
+  }, [enrichedCartItems]);
 
   const value: CartContextValue = {
-    items: cartItems,
+    items: enrichedCartItems,
     totalItems: LocalStorageCart.getTotalItems(),
-    knownTotal: 0, // Bu değeri ayrıca hesaplayabiliriz
-    hasUnknownPrices: false,
+    knownTotal,
+    hasUnknownPrices,
     isLoading,
     addItem,
     updateQuantity,
