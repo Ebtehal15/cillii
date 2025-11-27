@@ -4011,11 +4011,7 @@ button.text.danger:hover {
 }
 
 .cart-remove-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
   color: #b91c1c;
-  transform: translateY(-2px) scale(1.1);
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 .cart-remove-btn:active {
@@ -5069,6 +5065,12 @@ button.text.danger:hover {
     z-index: 5;
   }
 
+  /* RTL support for Arabic */
+  [dir="rtl"] .cart-remove-btn--top {
+    right: auto;
+    left: 0.6rem;
+  }
+
   .cart-item::before {
     content: '';
     position: absolute;
@@ -5264,11 +5266,9 @@ button.text.danger:hover {
     border-radius: 8px;
     flex: 0 0 auto;
     max-width: none;
-    background: rgba(239, 68, 68, 0.1) !important;
+    background: transparent !important;
     color: #dc2626 !important;
-    border: 1px solid rgba(239, 68, 68, 0.2) !important;
-    background: transparent;
-    color: var(--color-primary);
+    border: none !important;
     box-shadow: none;
   }
 
@@ -5281,17 +5281,11 @@ button.text.danger:hover {
   }
 
   .cart-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.2) !important;
     color: #b91c1c !important;
-    transform: translateY(-2px) scale(1.1);
-    border-color: rgba(239, 68, 68, 0.4) !important;
-    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
   }
 
   .cart-remove-btn:active {
-    transform: translateY(0) scale(0.95);
     color: #991b1b !important;
-    background: rgba(239, 68, 68, 0.3) !important;
   }
 
   .cart-card__footer {
