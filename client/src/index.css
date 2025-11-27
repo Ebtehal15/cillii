@@ -3980,21 +3980,22 @@ button.text.danger:hover {
 
 .cart-remove-btn {
   border: none;
-  border-radius: 8px;
-  padding: 0.35rem;
-  width: 32px;
-  height: 32px;
+  border-radius: 10px;
+  padding: 0.4rem;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  color: var(--color-primary);
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
   font-weight: 700;
   font-size: 1rem;
   box-shadow: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   line-height: 1;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .cart-remove-btn svg {
@@ -4007,14 +4008,17 @@ button.text.danger:hover {
 }
 
 .cart-remove-btn:hover {
-  background: transparent;
-  color: var(--color-primary-light);
+  background: rgba(239, 68, 68, 0.2);
+  color: #b91c1c;
   transform: translateY(-2px) scale(1.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 .cart-remove-btn:active {
   transform: translateY(0) scale(0.95);
-  color: var(--color-primary-dark);
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.3);
 }
 
 .cart-card__footer {
@@ -4048,6 +4052,8 @@ button.text.danger:hover {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .cart-card__footer-actions .primary {
@@ -4076,6 +4082,12 @@ button.text.danger:hover {
   border-color: #94a3b8;
   cursor: not-allowed;
   transform: none;
+}
+
+.cart-download-btn {
+  width: auto !important;
+  min-width: 200px;
+  max-width: 280px;
 }
 
 .cart-clear-btn {
@@ -5235,9 +5247,9 @@ button.text.danger:hover {
   }
 
   .cart-remove-btn {
-    padding: 0.35rem;
-    width: 30px;
-    height: 30px;
+    padding: 0.4rem;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -5245,6 +5257,9 @@ button.text.danger:hover {
     border-radius: 8px;
     flex: 0 0 auto;
     max-width: none;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
     background: transparent;
     color: var(--color-primary);
     box-shadow: none;
@@ -5259,14 +5274,17 @@ button.text.danger:hover {
   }
 
   .cart-remove-btn:hover {
-    background: transparent;
-    color: var(--color-primary-light);
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #b91c1c !important;
     transform: translateY(-2px) scale(1.1);
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
   }
 
   .cart-remove-btn:active {
     transform: translateY(0) scale(0.95);
-    color: var(--color-primary-dark);
+    color: #991b1b !important;
+    background: rgba(239, 68, 68, 0.3) !important;
   }
 
   .cart-card__footer {

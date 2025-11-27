@@ -22,7 +22,6 @@ const CartSummary = () => {
     hasUnknownPrices,
     updateQuantity,
     removeItem,
-    clearCart,
   } = useCart();
   const { language, t } = useTranslate();
   const [customerInfo, setCustomerInfo] = useState({
@@ -300,14 +299,7 @@ const CartSummary = () => {
             <div className="cart-card__footer-actions">
               <button
                 type="button"
-                className="text danger cart-clear-btn"
-                onClick={async () => { await clearCart(); }}
-              >
-                {t('Clear cart', 'مسح السلة', 'Vaciar carrito')}
-              </button>
-              <button
-                type="button"
-                className="primary"
+                className="primary cart-download-btn"
                 onClick={downloadOrderForm}
                 disabled={isGenerating}
               >
