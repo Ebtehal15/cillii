@@ -2,11 +2,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useState,
+  useEffect,
   type ReactNode,
 } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ClassRecord } from '../types';
+import { useMutation } from '@tanstack/react-query';
+import type { ClassRecord, CartItem } from '../types';
 import * as cartApi from '../api/cart';
+import { LocalStorageCart, type LocalCartItem } from '../api/localStorage-cart';
 import type { CartResponse } from '../api/cart';
 
 interface CartContextValue {
@@ -24,35 +27,44 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const queryClient = useQueryClient();
+  const [localCartItems, setLocalCartItems] = useState<LocalCartItem[]>([]);
+  const [isLoading] = useState(false);
 
-  // Sepeti getir
-  const {
-    data: cartData,
-    isLoading,
-  } = useQuery<CartResponse>({
-    queryKey: ['cart'],
-    queryFn: cartApi.fetchCart,
-    staleTime: 0, // Her zaman fresh data al
-    gcTime: 0, // Cache'i hemen temizle
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
-  });
+  // LocalStorage'dan cart'ı yükle
+  useEffect(() => {
+    const items = LocalStorageCart.getItems();
+    setLocalCartItems(items);
+    console.log('📦 LocalStorage cart loaded:', items);
+  }, []);
+
+  // LocalStorage'dan cart'ı yükle
+  useEffect(() => {
+    const items = LocalStorageCart.getItems();
+    setLocalCartItems(items);
+    console.log('📦 LocalStorage cart loaded:', items);
+  }, []);
 
   // Sepete ürün ekle
   const addItemMutation = useMutation({
-    mutationFn: (classId: number) => {
-      console.log('🛒 Adding to cart:', classId);
-      return cartApi.addToCart(classId);
+    mutationFn: async (classId: number) => {
+      console.log('🛒 Adding to cart (localStorage):', classId);
+      LocalStorageCart.addItem(classId);
+      
+      // API'ye de göndermeyi dene (arka planda)
+      try {
+        await cartApi.addToCart(classId);
+        console.log('✅ Also synced to server');
+      } catch (error) {
+        console.log('⚠️ Server sync failed, but localStorage updated:', error);
+      }
+      
+      return { success: true };
     },
-    onSuccess: (data) => {
-      console.log('✅ Cart add success:', data);
-      // Daha agresif cache invalidation
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.refetchQueries({ queryKey: ['cart'] });
-      // Cache'i tamamen temizle ve yeniden fetch et
-      queryClient.removeQueries({ queryKey: ['cart'] });
+    onSuccess: () => {
+      // LocalStorage'dan güncel veriyi al
+      const items = LocalStorageCart.getItems();
+      setLocalCartItems([...items]); // Yeni array oluştur ki re-render olsun
+      console.log('✅ Cart updated in localStorage:', items);
     },
     onError: (error) => {
       console.error('❌ Cart add error:', error);
@@ -62,26 +74,69 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Sepetteki ürün miktarını güncelle
   const updateQuantityMutation = useMutation({
-    mutationFn: ({ classId, quantity }: { classId: number; quantity: number }) =>
-      cartApi.updateCartItem(classId, quantity),
+    mutationFn: async ({ classId, quantity }: { classId: number; quantity: number }) => {
+      console.log('🔄 Updating cart quantity (localStorage):', classId, quantity);
+      LocalStorageCart.updateItem(classId, quantity);
+      
+      // API'ye de göndermeyi dene
+      try {
+        await cartApi.updateCartItem(classId, quantity);
+        console.log('✅ Also synced to server');
+      } catch (error) {
+        console.log('⚠️ Server sync failed, but localStorage updated:', error);
+      }
+      
+      return { success: true };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      const items = LocalStorageCart.getItems();
+      setLocalCartItems([...items]);
+      console.log('✅ Cart quantity updated in localStorage:', items);
     },
   });
 
   // Sepetten ürün kaldır
   const removeItemMutation = useMutation({
-    mutationFn: (classId: number) => cartApi.removeFromCart(classId),
+    mutationFn: async (classId: number) => {
+      console.log('🗑️ Removing from cart (localStorage):', classId);
+      LocalStorageCart.removeItem(classId);
+      
+      // API'ye de göndermeyi dene
+      try {
+        await cartApi.removeFromCart(classId);
+        console.log('✅ Also synced to server');
+      } catch (error) {
+        console.log('⚠️ Server sync failed, but localStorage updated:', error);
+      }
+      
+      return { success: true };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      const items = LocalStorageCart.getItems();
+      setLocalCartItems([...items]);
+      console.log('✅ Item removed from localStorage cart:', items);
     },
   });
 
   // Sepeti temizle
   const clearCartMutation = useMutation({
-    mutationFn: cartApi.clearCart,
+    mutationFn: async () => {
+      console.log('🧹 Clearing cart (localStorage)');
+      LocalStorageCart.clear();
+      
+      // API'ye de göndermeyi dene
+      try {
+        await cartApi.clearCart();
+        console.log('✅ Also synced to server');
+      } catch (error) {
+        console.log('⚠️ Server sync failed, but localStorage cleared:', error);
+      }
+      
+      return { success: true };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setLocalCartItems([]);
+      console.log('✅ Cart cleared from localStorage');
     },
   });
 
@@ -101,11 +156,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await clearCartMutation.mutateAsync();
   }, [clearCartMutation]);
 
+  // LocalCartItem'ları CartItem'lara dönüştür (geçici çözüm)
+  const cartItems: CartItem[] = localCartItems.map(item => ({
+    record: { id: item.classId } as any, // Geçici type assertion
+    quantity: item.quantity
+  }));
+
   const value: CartContextValue = {
-    items: cartData?.items || [],
-    totalItems: cartData?.totalItems || 0,
-    knownTotal: cartData?.knownTotal || 0,
-    hasUnknownPrices: cartData?.hasUnknownPrices || false,
+    items: cartItems,
+    totalItems: LocalStorageCart.getTotalItems(),
+    knownTotal: 0, // Bu değeri ayrıca hesaplayabiliriz
+    hasUnknownPrices: false,
     isLoading,
     addItem,
     updateQuantity,

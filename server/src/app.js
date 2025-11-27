@@ -15,37 +15,15 @@ const app = express();
 
 // 🔹 Genel Middleware
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000', 
-      'https://cillii-1.onrender.com',
-      process.env.CLIENT_URL
-    ].filter(Boolean);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Session cookie'leri için kritik
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'Cookie'
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000', 
+    'https://cillii-1.onrender.com'
   ],
-  exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200, // Legacy browser support
-  preflightContinue: false,
+  credentials: true, // Session cookie'leri için kritik
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,15 +31,15 @@ app.use(express.urlencoded({ extended: true }));
 // 🔹 Session Middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'cillii-super-secret-key-2024',
-  resave: true, // Session'ı her istekte kaydet
+  resave: false, // Session'ı sadece değiştiğinde kaydet
   saveUninitialized: true, // Boş session'ları da kaydet
-  rolling: true, // Her istekte cookie süresini yenile
-  name: 'cillii.sid', // Custom session name
+  rolling: false, // Cookie süresini sabit tut
+  name: 'connect.sid', // Standart session name
   cookie: {
-    secure: true, // Render HTTPS kullanıyor, true olmalı
-    httpOnly: true,
+    secure: false, // Önce false deneyelim
+    httpOnly: false, // JavaScript erişimi için false
     maxAge: 24 * 60 * 60 * 1000, // 24 saat
-    sameSite: 'none', // Cross-origin için 'none' gerekli
+    sameSite: 'lax', // Daha uyumlu seçenek
     domain: undefined, // Auto-detect domain
     path: '/', // Tüm path'lerde geçerli
   },
