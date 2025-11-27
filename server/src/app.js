@@ -44,12 +44,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Production'da true olmalı
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS'de true olmalı
+    secure: process.env.NODE_ENV === 'production', // Production'da HTTPS için true
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 saat
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Production'da 'none', development'da 'lax'
   },
 }));
 

@@ -39,9 +39,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Sepete ürün ekle
   const addItemMutation = useMutation({
-    mutationFn: (classId: number) => cartApi.addToCart(classId),
-    onSuccess: () => {
+    mutationFn: (classId: number) => {
+      console.log('🛒 Adding to cart:', classId);
+      return cartApi.addToCart(classId);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Cart add success:', data);
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onError: (error) => {
+      console.error('❌ Cart add error:', error);
+      alert('Sepete ekleme başarısız! Lütfen tekrar deneyin.');
     },
   });
 

@@ -85,9 +85,14 @@ router.get('/', (req, res) => {
 // Sepete ürün ekle
 router.post('/add', (req, res) => {
   try {
+    console.log('🛒 Cart add request:', req.body);
+    console.log('📝 Session ID:', req.sessionID);
+    console.log('🍪 Current cart:', req.session.cart);
+    
     const { classId } = req.body;
 
     if (!classId || typeof classId !== 'number') {
+      console.log('❌ Invalid classId:', classId);
       return res.status(400).json({ error: 'Invalid classId' });
     }
 
@@ -119,6 +124,7 @@ router.post('/add', (req, res) => {
       }
 
       req.session.cartTotal = total;
+      console.log('✅ Cart add success:', { classId, total, cartLength: req.session.cart.length });
       res.json({
         success: true,
         message: 'Item added to cart',
@@ -267,6 +273,7 @@ function calculateCartTotal(session, callback) {
 }
 
 module.exports = router;
+
 
 
 
