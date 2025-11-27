@@ -5,6 +5,9 @@ const { db } = require('../db');
 // Sepeti getir
 router.get('/', (req, res) => {
   try {
+    console.log('📦 Cart GET request - Session ID:', req.sessionID);
+    console.log('📦 Current cart in session:', req.session.cart);
+    
     const cart = req.session.cart || [];
     const cartTotal = req.session.cartTotal || 0;
 
@@ -124,11 +127,27 @@ router.post('/add', (req, res) => {
       }
 
       req.session.cartTotal = total;
-      console.log('✅ Cart add success:', { classId, total, cartLength: req.session.cart.length });
-      res.json({
-        success: true,
-        message: 'Item added to cart',
-        cartTotal: total,
+      
+      // Session'ı manuel olarak kaydet
+      req.session.save((err) => {
+        if (err) {
+          console.error('❌ Session save error:', err);
+          return res.status(500).json({ error: 'Session save failed' });
+        }
+        
+        console.log('✅ Cart add success:', { 
+          classId, 
+          total, 
+          cartLength: req.session.cart.length,
+          sessionId: req.sessionID,
+          cartItems: req.session.cart 
+        });
+        
+        res.json({
+          success: true,
+          message: 'Item added to cart',
+          cartTotal: total,
+        });
       });
     });
   } catch (error) {

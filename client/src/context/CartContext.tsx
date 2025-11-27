@@ -34,7 +34,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ['cart'],
     queryFn: cartApi.fetchCart,
     staleTime: 0, // Her zaman fresh data al
+    gcTime: 0, // Cache'i hemen temizle
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   // Sepete ürün ekle
@@ -45,7 +48,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     },
     onSuccess: (data) => {
       console.log('✅ Cart add success:', data);
+      // Daha agresif cache invalidation
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.refetchQueries({ queryKey: ['cart'] });
+      // Cache'i tamamen temizle ve yeniden fetch et
+      queryClient.removeQueries({ queryKey: ['cart'] });
     },
     onError: (error) => {
       console.error('❌ Cart add error:', error);
