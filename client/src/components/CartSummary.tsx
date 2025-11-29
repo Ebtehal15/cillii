@@ -251,22 +251,6 @@ const CartSummary = () => {
     }
   };
 
-  const downloadOrderForm = async () => {
-    if (!generatedPdfBlob) {
-      return;
-    }
-
-    const url = URL.createObjectURL(generatedPdfBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `order-form-${new Date().toISOString().slice(0, 10)}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setShowShareOptions(false);
-  };
-
   const shareToWhatsApp = async () => {
     if (!generatedPdfBlob) {
       return;
