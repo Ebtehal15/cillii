@@ -223,32 +223,36 @@ const CartSummary = () => {
       return;
     }
 
+    // Immediately show loading state for instant feedback
     setFormError(null);
     setIsGenerating(true);
-
-    try {
-      const pdfBlob = await generatePDFBlob();
-      setGeneratedPdfBlob(pdfBlob);
-      
-      // Download the PDF first
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `order-form-${new Date().toISOString().slice(0, 10)}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      // Show share options after download
-      setShowShareOptions(true);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to generate PDF', error);
-      setFormError(t('Failed to generate PDF. Please try again.', 'تعذر إنشاء ملف PDF. يرجى المحاولة مرة أخرى.', 'No se pudo generar el PDF. Inténtalo de nuevo.'));
-    } finally {
-      setIsGenerating(false);
-    }
+    
+    // Use setTimeout to ensure UI updates immediately
+    setTimeout(async () => {
+      try {
+        const pdfBlob = await generatePDFBlob();
+        setGeneratedPdfBlob(pdfBlob);
+        
+        // Download the PDF first
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `order-form-${new Date().toISOString().slice(0, 10)}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // Show share options after download
+        setShowShareOptions(true);
+        setIsGenerating(false);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to generate PDF', error);
+        setFormError(t('Failed to generate PDF. Please try again.', 'تعذر إنشاء ملف PDF. يرجى المحاولة مرة أخرى.', 'No se pudo generar el PDF. Inténtalo de nuevo.'));
+        setIsGenerating(false);
+      }
+    }, 0);
   };
 
   const shareToWhatsApp = async () => {
