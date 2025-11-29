@@ -291,6 +291,71 @@ function calculateCartTotal(session, callback) {
   });
 }
 
+// Order ID yönetimi
+const ORDER_ID_KEY = 'lastOrderId';
+const START_ORDER_ID = 1000;
+
+// En son order ID'yi getir
+router.get('/order-id', (req, res) => {
+  db.get('SELECT value FROM settings WHERE key = ?', [ORDER_ID_KEY], (err, row) => {
+    if (err) {
+      console.error('Error fetching order ID:', err);
+      return res.status(500).json({ error: 'Failed to fetch order ID' });
+    }
+    
+    if (!row) {
+      // İlk kez kullanılıyorsa başlangıç ID'sini döndür
+      return res.json({ orderId: START_ORDER_ID });
+    }
+    
+    try {
+      const orderId = parseInt(row.value, 10);
+      res.json({ orderId: isNaN(orderId) ? START_ORDER_ID : orderId });
+    } catch (error) {
+      console.error('Error parsing order ID:', error);
+      res.json({ orderId: START_ORDER_ID });
+    }
+  });
+});
+
+// Yeni order ID oluştur ve kaydet
+router.post('/order-id', (req, res) => {
+  db.get('SELECT value FROM settings WHERE key = ?', [ORDER_ID_KEY], (err, row) => {
+    if (err) {
+      console.error('Error fetching order ID:', err);
+      return res.status(500).json({ error: 'Failed to fetch order ID' });
+    }
+    
+    let nextOrderId;
+    if (!row) {
+      // İlk kez kullanılıyorsa başlangıç ID'sini kullan
+      nextOrderId = START_ORDER_ID;
+    } else {
+      try {
+        const currentOrderId = parseInt(row.value, 10);
+        nextOrderId = isNaN(currentOrderId) ? START_ORDER_ID : currentOrderId + 1;
+      } catch (error) {
+        console.error('Error parsing order ID:', error);
+        nextOrderId = START_ORDER_ID;
+      }
+    }
+    
+    // Yeni order ID'yi kaydet
+    db.run(
+      'INSERT INTO settings(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      [ORDER_ID_KEY, nextOrderId.toString()],
+      (updateErr) => {
+        if (updateErr) {
+          console.error('Error saving order ID:', updateErr);
+          return res.status(500).json({ error: 'Failed to save order ID' });
+        }
+        
+        res.json({ orderId: nextOrderId });
+      }
+    );
+  });
+});
+
 module.exports = router;
 
 

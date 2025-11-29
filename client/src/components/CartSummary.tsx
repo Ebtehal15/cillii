@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useCart } from '../context/CartContext';
 import useTranslate from '../hooks/useTranslate';
+import apiClient from '../api/client';
 
 const formatCurrency = (value: number) => {
   if (Number.isNaN(value)) {
@@ -50,18 +51,27 @@ const CartSummary = () => {
     return t('Order total', 'إجمالي الطلب', 'Total del pedido');
   }, [hasUnknownPrices, t]);
 
-  // Generate unique order ID starting from 1000
-  const getNextOrderId = (): number => {
-    const STORAGE_KEY = 'lastOrderId';
-    const START_ID = 1000;
-    const lastId = localStorage.getItem(STORAGE_KEY);
-    const nextId = lastId ? parseInt(lastId, 10) + 1 : START_ID;
-    localStorage.setItem(STORAGE_KEY, nextId.toString());
-    return nextId;
+  // Generate unique order ID from backend
+  const getNextOrderId = async (): Promise<number> => {
+    try {
+      // Backend'den yeni order ID oluştur ve kaydet
+      const response = await apiClient.post('/api/cart/order-id');
+      return response.data.orderId;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to get order ID from backend, using fallback:', error);
+      // Fallback: localStorage kullan (sadece backend erişilemezse)
+      const STORAGE_KEY = 'lastOrderId';
+      const START_ID = 1000;
+      const lastId = localStorage.getItem(STORAGE_KEY);
+      const nextId = lastId ? parseInt(lastId, 10) + 1 : START_ID;
+      localStorage.setItem(STORAGE_KEY, nextId.toString());
+      return nextId;
+    }
   };
 
   const generatePDFBlob = async (): Promise<Blob> => {
-    const orderId = currentOrderId || getNextOrderId();
+    const orderId = currentOrderId || await getNextOrderId();
     if (!currentOrderId) {
       setCurrentOrderId(orderId);
     }
@@ -262,7 +272,7 @@ const CartSummary = () => {
         setGeneratedPdfBlob(pdfBlob);
         
       // Download the PDF first
-      const orderId = currentOrderId || getNextOrderId();
+      const orderId = currentOrderId || await getNextOrderId();
       if (!currentOrderId) {
         setCurrentOrderId(orderId);
       }
@@ -301,7 +311,7 @@ const CartSummary = () => {
     setIsSharing(true);
 
     try {
-      const orderId = currentOrderId || getNextOrderId();
+      const orderId = currentOrderId || await getNextOrderId();
       const fileName = `order-form-${orderId}.pdf`;
       const file = new File([generatedPdfBlob], fileName, { type: 'application/pdf' });
 
@@ -378,7 +388,7 @@ const CartSummary = () => {
     setIsSharing(true);
 
     try {
-      const orderId = currentOrderId || getNextOrderId();
+      const orderId = currentOrderId || await getNextOrderId();
       const fileName = `order-form-${orderId}.pdf`;
       const file = new File([generatedPdfBlob], fileName, { type: 'application/pdf' });
 
