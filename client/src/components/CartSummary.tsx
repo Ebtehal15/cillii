@@ -70,12 +70,7 @@ const CartSummary = () => {
     }
   };
 
-  const generatePDFBlob = async (): Promise<Blob> => {
-    const orderId = currentOrderId || await getNextOrderId();
-    if (!currentOrderId) {
-      setCurrentOrderId(orderId);
-    }
-
+  const generatePDFBlob = async (orderId: number): Promise<Blob> => {
     // Create HTML content for PDF with Arabic support
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-GB'); // dd/mm/yyyy
@@ -268,15 +263,16 @@ const CartSummary = () => {
     // Use setTimeout to ensure UI updates immediately
     setTimeout(async () => {
       try {
-        const pdfBlob = await generatePDFBlob();
+        // Her yeni PDF için yeni bir order ID oluştur
+        const orderId = await getNextOrderId();
+        setCurrentOrderId(orderId);
+        
+        // PDF'i order ID ile oluştur
+        const pdfBlob = await generatePDFBlob(orderId);
         setGeneratedPdfBlob(pdfBlob);
         
-      // Download the PDF first
-      const orderId = currentOrderId || await getNextOrderId();
-      if (!currentOrderId) {
-        setCurrentOrderId(orderId);
-      }
-      const fileName = `order-form-${orderId}.pdf`;
+        // Download the PDF first
+        const fileName = `order-form-${orderId}.pdf`;
       const downloadUrl = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -303,7 +299,7 @@ const CartSummary = () => {
   };
 
   const shareToWhatsApp = async () => {
-    if (!generatedPdfBlob) {
+    if (!generatedPdfBlob || !currentOrderId) {
       return;
     }
 
@@ -311,7 +307,7 @@ const CartSummary = () => {
     setIsSharing(true);
 
     try {
-      const orderId = currentOrderId || await getNextOrderId();
+      const orderId = currentOrderId;
       const fileName = `order-form-${orderId}.pdf`;
       const file = new File([generatedPdfBlob], fileName, { type: 'application/pdf' });
 
@@ -380,7 +376,7 @@ const CartSummary = () => {
   };
 
   const shareOrderForm = async () => {
-    if (!generatedPdfBlob) {
+    if (!generatedPdfBlob || !currentOrderId) {
       return;
     }
 
@@ -388,7 +384,7 @@ const CartSummary = () => {
     setIsSharing(true);
 
     try {
-      const orderId = currentOrderId || await getNextOrderId();
+      const orderId = currentOrderId;
       const fileName = `order-form-${orderId}.pdf`;
       const file = new File([generatedPdfBlob], fileName, { type: 'application/pdf' });
 
