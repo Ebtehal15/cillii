@@ -546,24 +546,23 @@ router.post(
                 }
               };
 
-              const classNameValue = parsed.className && parsed.className.length
-                ? parsed.className
-                : (existing?.class_name ?? '');
-
-              // Preserve existing video if Excel doesn't provide a new one
+              // Update all columns from Excel, but preserve existing video if Excel video is empty
+              const classNameValue = parsed.className ?? '';
+              
+              // Preserve existing video if Excel doesn't provide a new one (not empty)
               const videoValue = (parsed.classVideo && parsed.classVideo.trim().length > 0)
                 ? parsed.classVideo
                 : (existing?.class_video ?? null);
 
               if (existing) {
-                // Update existing record
+                // Update existing record - update all columns from Excel
                 updateStmt.run(
                   parsed.mainCategory ?? '',
                   parsed.quality ?? '',
                   classNameValue,
-                  parsed.classNameArabic || null,
-                  parsed.classNameEnglish || null,
-                  parsed.classFeatures || null,
+                  parsed.classNameArabic ?? null,
+                  parsed.classNameEnglish ?? null,
+                  parsed.classFeatures ?? null,
                   priceValue,
                   weightValue,
                   quantityValue,
