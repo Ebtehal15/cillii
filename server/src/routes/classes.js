@@ -548,7 +548,7 @@ router.post(
 
               // Update all columns from Excel, but preserve existing video if Excel video is empty
               const classNameValue = parsed.className ?? '';
-              
+
               // Preserve existing video if Excel doesn't provide a new one (not empty)
               const videoValue = (parsed.classVideo && parsed.classVideo.trim().length > 0)
                 ? parsed.classVideo

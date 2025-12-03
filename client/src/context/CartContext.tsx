@@ -24,6 +24,7 @@ interface CartContextValue {
   updateQuantity: (classId: number, quantity: number) => Promise<void>;
   removeItem: (classId: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  replaceCart: (items: LocalCartItem[]) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
@@ -178,6 +179,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
+  // Tüm sepeti verilen LocalCartItem listesiyle değiştir
+  const replaceCartMutation = useMutation({
+    mutationFn: async (newItems: LocalCartItem[]) => {
+      console.log('🔁 Replacing cart (localStorage):', newItems);
+      LocalStorageCart.setItems(newItems);
+
+      // API tarafını da mümkün olduğunca senkronize etmeye çalış
+      try {
+        await cartApi.clearCart();
+        await Promise.all(
+          newItems.map((item) => cartApi.updateCartItem(item.classId, item.quantity)),
+        );
+        console.log('✅ Server cart replaced to match local cart');
+      } catch (error) {
+        console.log('⚠️ Server cart replace failed, but localStorage updated:', error);
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      const items = LocalStorageCart.getItems();
+      setLocalCartItems([...items]);
+      console.log('✅ Cart replaced from localStorage');
+    },
+  });
+
   const addItem = useCallback(async (record: ClassRecord) => {
     await addItemMutation.mutateAsync(record.id);
   }, [addItemMutation]);
@@ -193,6 +220,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = useCallback(async () => {
     await clearCartMutation.mutateAsync();
   }, [clearCartMutation]);
+
+  const replaceCart = useCallback(async (items: LocalCartItem[]) => {
+    await replaceCartMutation.mutateAsync(items);
+  }, [replaceCartMutation]);
 
   // Toplam tutarı hesapla
   const { knownTotal, hasUnknownPrices } = useMemo(() => {
@@ -220,6 +251,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     updateQuantity,
     removeItem,
     clearCart,
+    replaceCart,
   };
 
   return (

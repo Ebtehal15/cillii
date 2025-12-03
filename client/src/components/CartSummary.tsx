@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import { useCart } from '../context/CartContext';
 import useTranslate from '../hooks/useTranslate';
 import apiClient from '../api/client';
+import { addOrderToHistory, type OrderHistoryItem } from '../utils/orderHistory';
 
 const formatCurrency = (value: number) => {
   if (Number.isNaN(value)) {
@@ -13,6 +14,14 @@ const formatCurrency = (value: number) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+};
+
+type CustomerInfoState = {
+  fullName: string;
+  company: string;
+  phone: string;
+  salesPerson: string;
+  notes: string;
 };
 
 const CartSummary = () => {
@@ -26,11 +35,12 @@ const CartSummary = () => {
     clearCart,
   } = useCart();
   const { language, t } = useTranslate();
-  const [customerInfo, setCustomerInfo] = useState({
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfoState>({
     fullName: '',
     company: '',
     phone: '',
     salesPerson: '',
+    notes: '',
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -70,7 +80,23 @@ const CartSummary = () => {
     }
   };
 
-  const generatePDFBlob = async (orderId: number): Promise<Blob> => {
+  const generatePDFBlob = async (
+    orderId: number,
+    override?: {
+      items?: typeof items;
+      customerInfo?: CustomerInfoState;
+      knownTotal?: number;
+      totalItems?: number;
+      hasUnknownPrices?: boolean;
+      language?: string;
+    },
+  ): Promise<Blob> => {
+    const pdfItems = override?.items ?? items;
+    const pdfCustomerInfo = override?.customerInfo ?? customerInfo;
+    const pdfKnownTotal = override?.knownTotal ?? knownTotal;
+    const pdfTotalItems = override?.totalItems ?? totalItems;
+    const pdfHasUnknownPrices = override?.hasUnknownPrices ?? hasUnknownPrices;
+    const pdfLanguage = override?.language ?? language;
     // Create HTML content for PDF with Arabic support
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-GB'); // dd/mm/yyyy
@@ -82,48 +108,67 @@ const CartSummary = () => {
         padding: 30px;
         max-width: 750px;
         margin: 0 auto;
-        direction: ${language === 'ar' ? 'rtl' : 'ltr'};
-        text-align: ${language === 'ar' ? 'right' : 'left'};
+        direction: ${pdfLanguage === 'ar' ? 'rtl' : 'ltr'};
+        text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'};
         border: 2px solid #0f172a;
         border-radius: 3px;
         background: white;
         min-height: 600px;
       ">
-        <div style="
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 20px;
-        ">
-          <div></div>
-          <div style="text-align: center;">
-            <h1 style="
-              font-size: 18px;
-              margin: 0 0 4px 0;
-              color: #0f172a;
-              font-weight: bold;
-            ">${t('Order Form', 'نموذج الطلب', 'Formulario de pedido')}</h1>
-            <p style="
-              margin: 0;
-              color: #0f172a;
-              font-size: 11px;
-              font-weight: 600;
-            ">${t('Order ID', 'رقم الطلب', 'ID de Pedido')}: ${orderId}</p>
+        <div
+          style="
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          "
+        >
+          <div style="flex: 1;"></div>
+          <div
+            style="
+              text-align: center;
+              flex: 0 0 auto;
+            "
+          >
+            <h1
+              style="
+                font-size: 26px;
+                margin: 0 0 4px 0;
+                color: #0f172a;
+                font-weight: bold;
+              "
+            >
+              ${t('Order Form', 'نموذج الطلب', 'Formulario de pedido')}
+            </h1>
+            <p
+              style="
+                margin: 0;
+                color: #0f172a;
+                font-size: 17px;
+                font-weight: 600;
+              "
+            >
+              ${t('Order ID', 'رقم الطلب', 'ID de Pedido')}: ${orderId}
+            </p>
           </div>
-          <div style="
-            color: #0f172a;
-            font-size: 10px;
-            font-weight: bold;
-          ">
+          <div
+            style="
+              flex: 1;
+              text-align: right;
+              color: #0f172a;
+              font-size: 14px;
+              font-weight: bold;
+            "
+          >
             ${formattedDate} - ${formattedTime}
           </div>
         </div>
         
         <div style="margin-bottom: 20px;">
-          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Full Name', 'الاسم الكامل', 'Nombre completo')}:</strong> ${customerInfo.fullName}</p>
-          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Company', 'الشركة', 'Empresa')}:</strong> ${customerInfo.company || t('N/A', 'غير متوفر', 'No disponible')}</p>
-          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Phone', 'الهاتف', 'Teléfono')}:</strong> ${customerInfo.phone || t('N/A', 'غير متوفر', 'No disponible')}</p>
-          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Sales Person', 'مندوب المبيعات', 'Vendedor')}:</strong> ${customerInfo.salesPerson || t('N/A', 'غير متوفر', 'No disponible')}</p>
+                 <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Full Name', 'الاسم الكامل', 'Nombre completo')}:</strong> ${pdfCustomerInfo.fullName}</p>
+               <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Company', 'الشركة', 'Empresa')}:</strong> ${pdfCustomerInfo.company || t('N/A', 'غير متوفر', 'No disponible')}</p>
+               <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Phone', 'الهاتف', 'Teléfono')}:</strong> ${pdfCustomerInfo.phone || t('N/A', 'غير متوفر', 'No disponible')}</p>
+               <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Sales Person', 'مندوب المبيعات', 'Vendedor')}:</strong> ${pdfCustomerInfo.salesPerson || t('N/A', 'غير متوفر', 'No disponible')}</p>
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -134,37 +179,37 @@ const CartSummary = () => {
             border-radius: 4px;
             overflow: hidden;
           ">
-            <thead>
+                 <thead>
               <tr style="background: #0f172a; color: white;">
-                <th style="padding: 6px 4px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Code', 'الرمز', 'Código')}</th>
-                <th style="padding: 6px 4px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Group', 'المجموعة', 'Grupo')}</th>
-                <th style="padding: 6px 4px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Product Name', 'اسم المنتج', 'Nombre del producto')}</th>
-                <th style="padding: 6px 4px; text-align: center; font-size: 9px; font-weight: bold;">${t('Quantity', 'الكمية', 'Cantidad')}</th>
-                <th style="padding: 6px 4px; text-align: ${language === 'ar' ? 'left' : 'right'}; font-size: 9px; font-weight: bold;">${t('Unit Price', 'سعر الوحدة', 'Precio unitario')}</th>
-                <th style="padding: 6px 4px; text-align: ${language === 'ar' ? 'left' : 'right'}; font-size: 9px; font-weight: bold;">${t('Subtotal', 'الإجمالي الفرعي', 'Subtotal')}</th>
+                     <th style="padding: 6px 4px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 13px; font-weight: bold;">${t('Code', 'الرمز', 'Código')}</th>
+                     <th style="padding: 6px 4px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 13px; font-weight: bold;">${t('Group', 'المجموعة', 'Grupo')}</th>
+                     <th style="padding: 6px 4px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 13px; font-weight: bold;">${t('Product Name', 'اسم المنتج', 'Nombre del producto')}</th>
+                <th style="padding: 6px 4px; text-align: center; font-size: 13px; font-weight: bold;">${t('Quantity', 'الكمية', 'Cantidad')}</th>
+                     <th style="padding: 6px 4px; text-align: ${pdfLanguage === 'ar' ? 'left' : 'right'}; font-size: 13px; font-weight: bold;">${t('Unit Price', 'سعر الوحدة', 'Precio unitario')}</th>
+                     <th style="padding: 6px 4px; text-align: ${pdfLanguage === 'ar' ? 'left' : 'right'}; font-size: 13px; font-weight: bold;">${t('Subtotal', 'الإجمالي الفرعي', 'Subtotal')}</th>
               </tr>
             </thead>
             <tbody>
-              ${items.map(({ record, quantity }, index) => {
+                   ${pdfItems.map(({ record, quantity }, index) => {
                 const name = (() => {
-                  if (language === 'ar' && record.classNameArabic) return record.classNameArabic;
-                  if (language === 'en' && record.classNameEnglish) return record.classNameEnglish;
+                       if (pdfLanguage === 'ar' && record.classNameArabic) return record.classNameArabic;
+                       if (pdfLanguage === 'en' && record.classNameEnglish) return record.classNameEnglish;
                   return record.className;
                 })();
                 const unitPrice = record.classPrice ?? 0;
                 const subtotal = record.classPrice ? record.classPrice * quantity : 0;
                 return `
-                  <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #f9fafb;' : 'background: white;'}">
-                    <td style="padding: 4px 6px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 8px;">${record.specialId}</td>
-                    <td style="padding: 4px 6px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 8px;">${record.quality || t('N/A', 'غير متوفر', 'No disponible')}</td>
-                    <td style="padding: 4px 6px; text-align: ${language === 'ar' ? 'right' : 'left'}; font-size: 8px;">${name}</td>
-                    <td style="padding: 4px 6px; text-align: center; font-size: 8px;">${quantity}</td>
-                    <td style="padding: 4px 6px; text-align: ${language === 'ar' ? 'left' : 'right'}; font-size: 8px;">
+                       <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #f9fafb;' : 'background: white;'}">
+                         <td style="padding: 4px 6px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 12px;">${record.specialId}</td>
+                         <td style="padding: 4px 6px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 12px;">${record.quality || t('N/A', 'غير متوفر', 'No disponible')}</td>
+                         <td style="padding: 4px 6px; text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'}; font-size: 12px;">${name}</td>
+                    <td style="padding: 4px 6px; text-align: center; font-size: 12px;">${quantity}</td>
+                         <td style="padding: 4px 6px; text-align: ${pdfLanguage === 'ar' ? 'left' : 'right'}; font-size: 12px;">
                       ${record.classPrice !== null && record.classPrice !== undefined
                         ? `$${formatCurrency(unitPrice)}`
                         : t('Contact for price', 'السعر عند الطلب', 'Precio bajo consulta')}
                     </td>
-                    <td style="padding: 4px 6px; text-align: ${language === 'ar' ? 'left' : 'right'}; font-size: 8px;">
+                         <td style="padding: 4px 6px; text-align: ${pdfLanguage === 'ar' ? 'left' : 'right'}; font-size: 12px;">
                       ${record.classPrice !== null && record.classPrice !== undefined
                         ? `$${formatCurrency(subtotal)}`
                         : t('N/A', 'غير متوفر', 'No disponible')}
@@ -182,17 +227,37 @@ const CartSummary = () => {
           border-radius: 2px;
           margin-top: 15px;
         ">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 12px; color: #0f172a;">${t('Order total', 'إجمالي الطلب', 'Total del pedido')}:</strong>
-            <strong style="font-size: 12px; color: #059669;">$${formatCurrency(knownTotal)}</strong>
-          </div>
-          <p style="font-size: 10px; color: #0f172a; margin: 0;"><strong>${t('Total items', 'إجمالي العناصر', 'Total de artículos')}:</strong> ${totalItems}</p>
-          ${hasUnknownPrices ? `
-            <p style="color: #d97706; margin-top: 8px; font-size: 9px; margin-bottom: 0;">
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                 <strong style="font-size: 17px; color: #0f172a;">${t('Order total', 'إجمالي الطلب', 'Total del pedido')}:</strong>
+                 <strong style="font-size: 17px; color: #059669;">$${formatCurrency(pdfKnownTotal)}</strong>
+               </div>
+               <p style="font-size: 14px; color: #0f172a; margin: 0;"><strong>${t('Total items', 'إجمالي العناصر', 'Total de artículos')}:</strong> ${pdfTotalItems}</p>
+               ${pdfHasUnknownPrices ? `
+            <p style="color: #d97706; margin-top: 8px; font-size: 13px; margin-bottom: 0;">
               ${t('Some prices require confirmation. Totals are estimates.', 'بعض الأسعار تتطلب تأكيداً. الإجمالي تقديري.', 'Algunos precios requieren confirmación. Los totales son estimados.')}
             </p>
           ` : ''}
         </div>
+
+        ${
+          pdfCustomerInfo.notes
+            ? `
+        <div style="
+          margin-top: 15px;
+          padding: 10px 12px;
+          border-radius: 2px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          text-align: ${pdfLanguage === 'ar' ? 'right' : 'left'};
+        ">
+          <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">
+            ${t('Notes', 'ملاحظات', 'Notas')}:
+          </p>
+          <p style="margin: 0; font-size: 12px; white-space: pre-wrap; line-height: 1.4;">${pdfCustomerInfo.notes}</p>
+        </div>
+        `
+            : ''
+        }
       </div>
     `;
 
@@ -270,6 +335,30 @@ const CartSummary = () => {
         // PDF'i order ID ile oluştur
         const pdfBlob = await generatePDFBlob(orderId);
         setGeneratedPdfBlob(pdfBlob);
+
+        // Bu siparişi geçmişe ekle
+        const historyEntry: OrderHistoryItem = {
+          orderId,
+          createdAt: new Date().toISOString(),
+          customerInfo: {
+            ...customerInfo,
+          },
+          items: items.map(({ record, quantity }) => ({
+            classId: record.id,
+            quantity,
+            specialId: record.specialId,
+            quality: record.quality ?? null,
+            className: record.className,
+            classNameArabic: record.classNameArabic ?? null,
+            classNameEnglish: record.classNameEnglish ?? null,
+            classPrice: record.classPrice ?? null,
+          })),
+          knownTotal,
+          totalItems,
+          hasUnknownPrices,
+          language,
+        };
+        addOrderToHistory(historyEntry);
         
         // Download the PDF first
         const fileName = `order-form-${orderId}.pdf`;
@@ -433,6 +522,7 @@ const CartSummary = () => {
     await updateQuantity(classId, next);
   };
 
+
   return (
     <div className="card cart-card">
       <div className="cart-card__header">
@@ -495,6 +585,16 @@ const CartSummary = () => {
                 />
               </label>
             </div>
+            <label className="cart-form-field" style={{ gridColumn: '1 / -1' }}>
+              {t('Notes', 'ملاحظات', 'Notas')}
+              <textarea
+                value={customerInfo.notes}
+                onChange={(event) => handleCustomerChange('notes', event.target.value)}
+                placeholder={t('Add notes for this order (optional)', 'أضف ملاحظات لهذا الطلب (اختياري)', 'Añade notas para este pedido (opcional)')}
+                rows={3}
+                style={{ resize: 'vertical' }}
+              />
+            </label>
             {formError && <p className="cart-form-error">{formError}</p>}
           </div>
 

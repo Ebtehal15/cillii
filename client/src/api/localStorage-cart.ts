@@ -42,6 +42,16 @@ export class LocalStorageCart {
     return this.getCartData().items;
   }
 
+  // Tüm sepeti dışarıdan verilen item listesiyle değiştir
+  static setItems(items: LocalCartItem[]): void {
+    const cartData: LocalCartData = {
+      items,
+      timestamp: Date.now(),
+    };
+    this.saveCartData(cartData);
+    console.log('✅ LocalStorage cart replaced:', cartData.items);
+  }
+
   static addItem(classId: number): void {
     const cartData = this.getCartData();
     const existingItem = cartData.items.find(item => item.classId === classId);

@@ -3,6 +3,8 @@ import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   bulkUploadClasses,
   createClass,
@@ -23,6 +25,7 @@ import {
 } from '../constants/columns';
 import { fetchColumnVisibility, updateColumnVisibility } from '../api/settings';
 import useTranslate from '../hooks/useTranslate';
+import { getOrderHistory, deleteOrderFromHistory, type OrderHistoryItem } from '../utils/orderHistory';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 
   (import.meta.env.PROD ? 'https://cillii.onrender.com' : 'http://localhost:4000');
@@ -89,6 +92,8 @@ const AdminPanel = () => {
   const [bulkReport, setBulkReport] = useState<BulkUploadResult | null>(null);
   const [updateOnly, setUpdateOnly] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<'video' | 'price' | 'arabic' | 'english' | 'name' | 'withVideo' | null>(null);
+  const [orderHistory, setOrderHistory] = useState<OrderHistoryItem[]>([]);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
 
   const queryClient = useQueryClient();
   const { data: allClasses = [] } = useClasses({ includeZeroQuantity: true });
@@ -140,6 +145,11 @@ const AdminPanel = () => {
       URL.revokeObjectURL(videoPreview);
     }
   }, [videoPreview]);
+
+  // Load order history
+  useEffect(() => {
+    setOrderHistory(getOrderHistory());
+  }, []);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -536,6 +546,405 @@ const AdminPanel = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const formatCurrency = (value: number) => {
+    if (Number.isNaN(value)) {
+      return '—';
+    }
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const generateHistoryOrderPdf = async (entry: OrderHistoryItem): Promise<Blob> => {
+    const now = new Date(entry.createdAt);
+    const formattedDate = now.toLocaleDateString('en-GB');
+    const formattedTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const entryLanguage = entry.language || language;
+
+    const htmlContent = `
+      <div style="
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        padding: 30px;
+        max-width: 750px;
+        margin: 0 auto;
+        direction: ${entryLanguage === 'ar' ? 'rtl' : 'ltr'};
+        text-align: ${entryLanguage === 'ar' ? 'right' : 'left'};
+        border: 2px solid #0f172a;
+        border-radius: 3px;
+        background: white;
+        min-height: 600px;
+      ">
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        ">
+          <div></div>
+          <div style="text-align: center;">
+            <h1 style="
+              font-size: 18px;
+              margin: 0 0 4px 0;
+              color: #0f172a;
+              font-weight: bold;
+            ">${t('Order Form', 'نموذج الطلب', 'Formulario de pedido')}</h1>
+            <p style="
+              margin: 0;
+              color: #0f172a;
+              font-size: 11px;
+              font-weight: 600;
+            ">${t('Order ID', 'رقم الطلب', 'ID de Pedido')}: ${entry.orderId}</p>
+          </div>
+          <div style="
+            color: #0f172a;
+            font-size: 10px;
+            font-weight: bold;
+          ">
+            ${formattedDate} - ${formattedTime}
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Full Name', 'الاسم الكامل', 'Nombre completo')}:</strong> ${entry.customerInfo.fullName}</p>
+          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Company', 'الشركة', 'Empresa')}:</strong> ${entry.customerInfo.company || t('N/A', 'غير متوفر', 'No disponible')}</p>
+          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Phone', 'الهاتف', 'Teléfono')}:</strong> ${entry.customerInfo.phone || t('N/A', 'غير متوفر', 'No disponible')}</p>
+          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Sales Person', 'مندوب المبيعات', 'Vendedor')}:</strong> ${entry.customerInfo.salesPerson || t('N/A', 'غير متوفر', 'No disponible')}</p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <table style="
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+          ">
+            <thead>
+              <tr style="background: #0f172a; color: white;">
+                <th style="padding: 6px 4px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Code', 'الرمز', 'Código')}</th>
+                <th style="padding: 6px 4px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Group', 'المجموعة', 'Grupo')}</th>
+                <th style="padding: 6px 4px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 9px; font-weight: bold;">${t('Product Name', 'اسم المنتج', 'Nombre del producto')}</th>
+                <th style="padding: 6px 4px; text-align: center; font-size: 9px; font-weight: bold;">${t('Quantity', 'الكمية', 'Cantidad')}</th>
+                <th style="padding: 6px 4px; text-align: ${entryLanguage === 'ar' ? 'left' : 'right'}; font-size: 9px; font-weight: bold;">${t('Unit Price', 'سعر الوحدة', 'Precio unitario')}</th>
+                <th style="padding: 6px 4px; text-align: ${entryLanguage === 'ar' ? 'left' : 'right'}; font-size: 9px; font-weight: bold;">${t('Subtotal', 'الإجمالي الفرعي', 'Subtotal')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entry.items.map((item, index) => {
+                const name = (() => {
+                  if (entryLanguage === 'ar' && item.classNameArabic) return item.classNameArabic;
+                  if (entryLanguage === 'en' && item.classNameEnglish) return item.classNameEnglish;
+                  return item.className;
+                })();
+                const unitPrice = item.classPrice ?? 0;
+                const subtotal = item.classPrice ? item.classPrice * item.quantity : 0;
+                return `
+                  <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #f9fafb;' : 'background: white;'}">
+                    <td style="padding: 4px 6px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 8px;">${item.specialId}</td>
+                    <td style="padding: 4px 6px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 8px;">${item.quality || t('N/A', 'غير متوفر', 'No disponible')}</td>
+                    <td style="padding: 4px 6px; text-align: ${entryLanguage === 'ar' ? 'right' : 'left'}; font-size: 8px;">${name}</td>
+                    <td style="padding: 4px 6px; text-align: center; font-size: 8px;">${item.quantity}</td>
+                    <td style="padding: 4px 6px; text-align: ${entryLanguage === 'ar' ? 'left' : 'right'}; font-size: 8px;">
+                      ${item.classPrice !== null && item.classPrice !== undefined
+                        ? `$${formatCurrency(unitPrice)}`
+                        : t('Contact for price', 'السعر عند الطلب', 'Precio bajo consulta')}
+                    </td>
+                    <td style="padding: 4px 6px; text-align: ${entryLanguage === 'ar' ? 'left' : 'right'}; font-size: 8px;">
+                      ${item.classPrice !== null && item.classPrice !== undefined
+                        ? `$${formatCurrency(subtotal)}`
+                        : t('N/A', 'غير متوفر', 'No disponible')}
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="
+          background: #f8fafc;
+          padding: 12px;
+          border-radius: 2px;
+          margin-top: 15px;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 12px; color: #0f172a;">${t('Order total', 'إجمالي الطلب', 'Total del pedido')}:</strong>
+            <strong style="font-size: 12px; color: #059669;">$${formatCurrency(entry.knownTotal)}</strong>
+          </div>
+          <p style="font-size: 10px; color: #0f172a; margin: 0;"><strong>${t('Total items', 'إجمالي العناصر', 'Total de artículos')}:</strong> ${entry.totalItems}</p>
+          ${entry.hasUnknownPrices ? `
+            <p style="color: #d97706; margin-top: 8px; font-size: 9px; margin-bottom: 0;">
+              ${t('Some prices require confirmation. Totals are estimates.', 'بعض الأسعار تتطلب تأكيداً. الإجمالي تقديري.', 'Algunos precios requieren confirmación. Los totales son estimados.')}
+            </p>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = '800px';
+    tempDiv.style.backgroundColor = '#f8fafc';
+    tempDiv.style.padding = '20px';
+    document.body.appendChild(tempDiv);
+
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#f8fafc',
+      width: 840,
+      height: tempDiv.scrollHeight + 40,
+      x: 0,
+      y: 0
+    });
+
+    document.body.removeChild(tempDiv);
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF();
+    const imgWidth = 210;
+    const pageHeight = 295;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    return pdf.output('blob');
+  };
+
+  const handleOpenOrderPdf = async (entry: OrderHistoryItem) => {
+    try {
+      const blob = await generateHistoryOrderPdf(entry);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to generate PDF', error);
+      setErrorFeedback(t('Failed to generate PDF. Please try again.', 'تعذر إنشاء ملف PDF. يرجى المحاولة مرة أخرى.', 'No se pudo generar el PDF. Inténtalo de nuevo.'));
+    }
+  };
+
+  const handleShareOrderPdf = async (entry: OrderHistoryItem) => {
+    try {
+      const blob = await generateHistoryOrderPdf(entry);
+      const fileName = `order-form-${entry.orderId}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: t('Order Form', 'نموذج الطلب', 'Formulario de pedido'),
+          text: t('Order Form', 'نموذج الطلب', 'Formulario de pedido') + ` - ${entry.customerInfo.fullName}`,
+        });
+      } else {
+        setErrorFeedback(
+          t(
+            'Share feature is not available on this device.',
+            'ميزة المشاركة غير متاحة على هذا الجهاز.',
+            'La función de compartir no está disponible en este dispositivo.',
+          ),
+        );
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        // eslint-disable-next-line no-console
+        console.error('Failed to share PDF', error);
+        setErrorFeedback(
+          t(
+            'Failed to share PDF. Please try again.',
+            'تعذر مشاركة ملف PDF. يرجى المحاولة مرة أخرى.',
+            'No se pudo compartir el PDF. Inténtalo de nuevo.',
+          ),
+        );
+      }
+    }
+  };
+
+  const handleDeleteOrder = (orderId: number) => {
+    const message = t(
+      'Delete this order from history? This action cannot be undone.',
+      'حذف هذا الطلب من السجل؟ لا يمكن التراجع عن هذا الإجراء.',
+      '¿Eliminar este pedido del historial? Esta acción no se puede deshacer.',
+    );
+    if (window.confirm(message)) {
+      deleteOrderFromHistory(orderId);
+      setOrderHistory(getOrderHistory());
+      setFeedback(t('Order deleted from history.', 'تم حذف الطلب من السجل.', 'Pedido eliminado del historial.'));
+    }
+  };
+
+  const exportSingleOrderToExcel = (entry: OrderHistoryItem) => {
+    const createdDate = new Date(entry.createdAt);
+    const formattedDate = createdDate.toLocaleDateString('en-GB');
+    const entryLanguage = entry.language || language;
+
+    // Tek sheet, tek tablo: Order ID | Date | Code | Group | Product Name | Quantity | Unit Price | Subtotal
+    const rows = entry.items.map((item) => {
+      const name = (() => {
+        if (entryLanguage === 'ar' && item.classNameArabic) return item.classNameArabic;
+        if (entryLanguage === 'en' && item.classNameEnglish) return item.classNameEnglish;
+        return item.className;
+      })();
+
+      const unitPrice = item.classPrice ?? 0;
+      const subtotal = item.classPrice ? item.classPrice * item.quantity : 0;
+
+      return {
+        'Order ID': entry.orderId,
+        'Date': formattedDate,
+        'Code': item.specialId,
+        'Group': item.quality || '',
+        'Product Name': name,
+        'Quantity': item.quantity,
+        'Unit Price': item.classPrice !== null && item.classPrice !== undefined ? unitPrice : '',
+        'Subtotal': item.classPrice !== null && item.classPrice !== undefined ? subtotal : '',
+      };
+    });
+
+    const header = [
+      'Order ID',
+      'Date',
+      'Code',
+      'Group',
+      'Product Name',
+      'Quantity',
+      'Unit Price',
+      'Subtotal',
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header });
+    // Sütun genişlikleri
+    worksheet['!cols'] = [
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 40 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 14 },
+    ];
+
+    // Satır sayısı (header + data)
+    const dataRowCount = rows.length;
+    const startRow = 2; // 1. satır header
+
+    // Her satır için Subtotal hücresine formül yaz (Quantity * Unit Price)
+    for (let i = 0; i < dataRowCount; i += 1) {
+      const rowIndex = startRow + i;
+      const quantityCell = `F${rowIndex}`;
+      const unitPriceCell = `G${rowIndex}`;
+      const subtotalCell = `H${rowIndex}`;
+
+      if (!worksheet[subtotalCell]) {
+        worksheet[subtotalCell] = { t: 'n', v: 0 };
+      }
+      worksheet[subtotalCell].f = `${quantityCell}*${unitPriceCell}`;
+    }
+
+    // Toplam satırı: H kolonunda SUM formülü
+    const totalRowIndex = startRow + dataRowCount;
+    const totalLabelCell = `G${totalRowIndex}`;
+    const totalValueCell = `H${totalRowIndex}`;
+
+    XLSX.utils.sheet_add_aoa(
+      worksheet,
+      [[t('Total', 'الإجمالي', 'Total')]],
+      { origin: totalLabelCell },
+    );
+
+    worksheet[totalValueCell] = {
+      t: 'n',
+      f: `SUM(H${startRow}:H${startRow + dataRowCount - 1})`,
+    };
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Order');
+
+    const fileName = `order_${entry.orderId}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  const exportOrderHistoryToExcel = () => {
+    if (orderHistory.length === 0) {
+      setErrorFeedback(t('No orders to export.', 'لا توجد طلبات للتصدير.', 'No hay pedidos para exportar.'));
+      return;
+    }
+
+    // Summary Sheet: Her order için özet bilgiler
+    const summaryData = orderHistory.map((entry) => {
+      const createdDate = new Date(entry.createdAt);
+      return {
+        'Order ID': entry.orderId,
+        'Date': createdDate.toLocaleDateString('en-GB'),
+        'Time': createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        'Full Name': entry.customerInfo.fullName || '',
+        'Company': entry.customerInfo.company || '',
+        'Phone': entry.customerInfo.phone || '',
+        'Sales Person': entry.customerInfo.salesPerson || '',
+        'Total Items': entry.totalItems,
+        'Total Amount': entry.knownTotal,
+        'Has Unknown Prices': entry.hasUnknownPrices ? t('Yes', 'نعم', 'Sí') : t('No', 'لا', 'No'),
+      };
+    });
+
+    // Details Sheet: Her order'ın ürün detayları
+    const detailsData: any[] = [];
+    orderHistory.forEach((entry) => {
+      entry.items.forEach((item) => {
+        const name = (() => {
+          const entryLanguage = entry.language || language;
+          if (entryLanguage === 'ar' && item.classNameArabic) return item.classNameArabic;
+          if (entryLanguage === 'en' && item.classNameEnglish) return item.classNameEnglish;
+          return item.className;
+        })();
+        detailsData.push({
+          'Order ID': entry.orderId,
+          'Date': new Date(entry.createdAt).toLocaleDateString('en-GB'),
+          'Customer': entry.customerInfo.fullName || '',
+          'Product Code': item.specialId,
+          'Group': item.quality || '',
+          'Product Name': name,
+          'Quantity': item.quantity,
+          'Unit Price': item.classPrice ?? '',
+          'Subtotal': item.classPrice ? item.classPrice * item.quantity : '',
+        });
+      });
+    });
+
+    // Create workbook with two sheets
+    const workbook = XLSX.utils.book_new();
+    
+    // Summary sheet
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, t('Summary', 'ملخص', 'Resumen'));
+    
+    // Details sheet
+    const detailsWorksheet = XLSX.utils.json_to_sheet(detailsData);
+    XLSX.utils.book_append_sheet(workbook, detailsWorksheet, t('Details', 'التفاصيل', 'Detalles'));
+
+    // Generate filename with current date
+    const fileName = `order_history_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    setFeedback(t('Order history exported to Excel successfully.', 'تم تصدير سجل الطلبات إلى Excel بنجاح.', 'Historial de pedidos exportado a Excel exitosamente.'));
   };
 
   return (
@@ -1412,6 +1821,101 @@ const AdminPanel = () => {
             )}
           </div>
         )}
+
+        {/* Order History Section */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <h2>{t('Order History', 'سجل الطلبات', 'Historial de Pedidos')}</h2>
+              <p>{t('View and manage previous order forms created on this device.', 'عرض وإدارة نماذج الطلبات السابقة التي تم إنشاؤها على هذا الجهاز.', 'Ver y gestionar formularios de pedidos anteriores creados en este dispositivo.')}</p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {showOrderHistory && orderHistory.length > 0 && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={exportOrderHistoryToExcel}
+                >
+                  {t('Export Excel', 'تصدير Excel', 'Exportar Excel')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setShowOrderHistory(!showOrderHistory);
+                  if (!showOrderHistory) {
+                    setOrderHistory(getOrderHistory());
+                  }
+                }}
+              >
+                {showOrderHistory ? t('Hide', 'إخفاء', 'Ocultar') : t('Show', 'عرض', 'Mostrar')}
+              </button>
+            </div>
+          </div>
+
+          {showOrderHistory && (
+            <>
+              {orderHistory.length === 0 ? (
+                <p>{t('No orders found in history.', 'لا توجد طلبات في السجل.', 'No se encontraron pedidos en el historial.')}</p>
+              ) : (
+                <div className="admin-order-history">
+                  <ul className="admin-order-history__list">
+                    {orderHistory.map((entry) => {
+                      const createdDate = new Date(entry.createdAt);
+                      const dateLabel = `${createdDate.toLocaleDateString('en-GB')} ${createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+                      return (
+                        <li key={entry.orderId} className="admin-order-history__item">
+                          <div className="admin-order-history__info">
+                            <span className="admin-order-history__id">
+                              {t('Order', 'الطلب', 'Pedido')} {entry.orderId}
+                            </span>
+                            <span className="admin-order-history__meta">
+                              {entry.customerInfo.fullName || t('Unknown customer', 'عميل غير معروف', 'Cliente desconocido')} · {dateLabel}
+                            </span>
+                            <span className="admin-order-history__details">
+                              {entry.totalItems} {t('items', 'عنصر', 'artículos')} · ${formatCurrency(entry.knownTotal)}
+                            </span>
+                          </div>
+                          <div className="admin-order-history__actions">
+                            <button
+                              type="button"
+                              className="admin-order-history__btn"
+                              onClick={() => handleOpenOrderPdf(entry)}
+                            >
+                              {t('Open PDF', 'فتح PDF', 'Abrir PDF')}
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-order-history__btn admin-order-history__btn--share"
+                              onClick={() => handleShareOrderPdf(entry)}
+                            >
+                              {t('Share', 'مشاركة', 'Compartir')}
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-order-history__btn"
+                              onClick={() => exportSingleOrderToExcel(entry)}
+                            >
+                              {t('Export Excel', 'تصدير Excel', 'Exportar Excel')}
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-order-history__btn admin-order-history__btn--delete"
+                              onClick={() => handleDeleteOrder(entry.orderId)}
+                            >
+                              {t('Delete', 'حذف', 'Eliminar')}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
