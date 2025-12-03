@@ -165,7 +165,7 @@ const CartSummary = () => {
         </div>
         
         <div style="margin-bottom: 20px;">
-                 <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Full Name', 'الاسم الكامل', 'Nombre completo')}:</strong> ${pdfCustomerInfo.fullName}</p>
+                 <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Customer Name', 'اسم العميل', 'Nombre del cliente')}:</strong> ${pdfCustomerInfo.fullName}</p>
                <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Company', 'الشركة', 'Empresa')}:</strong> ${pdfCustomerInfo.company || t('N/A', 'غير متوفر', 'No disponible')}</p>
                <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Phone', 'الهاتف', 'Teléfono')}:</strong> ${pdfCustomerInfo.phone || t('N/A', 'غير متوفر', 'No disponible')}</p>
                <p style="margin: 4px 0; font-size: 14px;"><strong>${t('Sales Person', 'مندوب المبيعات', 'Vendedor')}:</strong> ${pdfCustomerInfo.salesPerson || t('N/A', 'غير متوفر', 'No disponible')}</p>
@@ -548,7 +548,7 @@ const CartSummary = () => {
             <h3>{t('Your details', 'بياناتك', 'Tus datos')}</h3>
             <div className="cart-form-grid">
               <label className="cart-form-field">
-                {t('Full Name*', 'الاسم الكامل*', 'Nombre completo*')}
+                {t('Customer Name*', 'اسم العميل*', 'Nombre del cliente*')}
                 <input
                   type="text"
                   value={customerInfo.fullName}
@@ -837,7 +837,7 @@ const CartSummary = () => {
             <div className="cart-info-popup-content">
               <p>{t('Please fill in your information before downloading or sharing the order form.', 'يرجى ملء معلوماتك قبل تنزيل أو مشاركة نموذج الطلب.', 'Por favor, completa tu información antes de descargar o compartir el formulario de pedido.')}</p>
               <p style={{ marginTop: '0.5rem', fontWeight: 600 }}>
-                {t('Required field: Full Name', 'الحقل المطلوب: الاسم الكامل', 'Campo obligatorio: Nombre completo')}
+                {t('Required field: Customer Name', 'الحقل المطلوب: اسم العميل', 'Campo obligatorio: Nombre del cliente')}
               </p>
             </div>
             <div className="cart-info-popup-footer">

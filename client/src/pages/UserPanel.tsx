@@ -43,11 +43,11 @@ const getInitialViewMode = (): ViewMode => {
 };
 
 const CartIconGlyph = () => (
-  <svg
-    className="cart-icon-trigger__icon"
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
+    <svg
+      className="cart-icon-trigger__icon"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
@@ -534,7 +534,6 @@ const UserPanel = () => {
                             aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')}
                           >
                             <CartIconGlyph />
-                            <span>{t('Add', 'إضافة', 'Agregar')}</span>
                           </button>
                         );
                       }
@@ -551,7 +550,9 @@ const UserPanel = () => {
                           </button>
                           <span className="card-cart-value">
                             {quantity === 0
-                              ? t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')
+                              ? isMobileView
+                                ? t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')
+                                : '0'
                               : quantity}
                           </span>
                           <button

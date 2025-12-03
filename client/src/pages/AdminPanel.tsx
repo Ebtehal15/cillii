@@ -608,7 +608,7 @@ const AdminPanel = () => {
         </div>
         
         <div style="margin-bottom: 20px;">
-          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Full Name', 'الاسم الكامل', 'Nombre completo')}:</strong> ${entry.customerInfo.fullName}</p>
+          <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Customer Name', 'اسم العميل', 'Nombre del cliente')}:</strong> ${entry.customerInfo.fullName}</p>
           <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Company', 'الشركة', 'Empresa')}:</strong> ${entry.customerInfo.company || t('N/A', 'غير متوفر', 'No disponible')}</p>
           <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Phone', 'الهاتف', 'Teléfono')}:</strong> ${entry.customerInfo.phone || t('N/A', 'غير متوفر', 'No disponible')}</p>
           <p style="margin: 4px 0; font-size: 10px;"><strong>${t('Sales Person', 'مندوب المبيعات', 'Vendedor')}:</strong> ${entry.customerInfo.salesPerson || t('N/A', 'غير متوفر', 'No disponible')}</p>
@@ -895,7 +895,7 @@ const AdminPanel = () => {
         'Order ID': entry.orderId,
         'Date': createdDate.toLocaleDateString('en-GB'),
         'Time': createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        'Full Name': entry.customerInfo.fullName || '',
+        'Customer Name': entry.customerInfo.fullName || '',
         'Company': entry.customerInfo.company || '',
         'Phone': entry.customerInfo.phone || '',
         'Sales Person': entry.customerInfo.salesPerson || '',
