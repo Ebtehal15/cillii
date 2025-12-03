@@ -286,9 +286,6 @@ const CartSummary = () => {
           ` : ''}
         </div>
 
-        ${
-          pdfCustomerInfo.notes
-            ? `
         <div style="
           margin-top: 15px;
           padding: 10px 12px;
@@ -300,11 +297,8 @@ const CartSummary = () => {
           <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">
             ${t('Notes', 'ملاحظات', 'Notas')}:
           </p>
-          <p style="margin: 0; font-size: 12px; white-space: pre-wrap; line-height: 1.4;">${pdfCustomerInfo.notes}</p>
+          <p style="margin: 0; font-size: 12px; white-space: pre-wrap; line-height: 1.4; min-height: 16px;">${pdfCustomerInfo.notes || ''}</p>
         </div>
-        `
-            : ''
-        }
       </div>
     `;
 
