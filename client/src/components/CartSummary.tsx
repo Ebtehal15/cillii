@@ -100,8 +100,9 @@ const CartSummary = () => {
     const pdfLanguage = override?.language ?? language;
     // Create HTML content for PDF with Arabic support
     const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-GB'); // dd/mm/yyyy
-    const formattedTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); // HH:MM
+    // Türkiye saatine göre formatla
+    const formattedDate = now.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' }); // dd.mm.yyyy
+    const formattedTime = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }); // HH:MM
 
     const htmlContent = `
       <div style="

@@ -102,7 +102,23 @@ const parseClassPayload = (payload = {}, options = {}) => {
   };
 };
 
+// Get current timestamp in Turkey timezone (Europe/Istanbul)
+const getTurkeyTimestamp = () => {
+  const now = new Date();
+  // Convert to Turkey timezone (UTC+3)
+  const turkeyTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }));
+  // Format as SQLite datetime string (YYYY-MM-DD HH:MM:SS)
+  const year = turkeyTime.getFullYear();
+  const month = String(turkeyTime.getMonth() + 1).padStart(2, '0');
+  const day = String(turkeyTime.getDate()).padStart(2, '0');
+  const hours = String(turkeyTime.getHours()).padStart(2, '0');
+  const minutes = String(turkeyTime.getMinutes()).padStart(2, '0');
+  const seconds = String(turkeyTime.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 module.exports = {
   getNextSpecialId,
   parseClassPayload,
+  getTurkeyTimestamp,
 };

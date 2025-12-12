@@ -5,7 +5,7 @@ const multer = require('multer');
 const XLSX = require('xlsx');
 const axios = require('axios');
 const { db } = require('../db');
-const { getNextSpecialId, parseClassPayload } = require('../utils');
+const { getNextSpecialId, parseClassPayload, getTurkeyTimestamp } = require('../utils');
 
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
 
@@ -317,10 +317,10 @@ router.put(
             // Record price change in history if price changed
             if (priceChanged) {
               const priceHistoryStmt = db.prepare(`
-                INSERT INTO price_history (class_id, old_price, new_price)
-                VALUES (?, ?, ?)
+                INSERT INTO price_history (class_id, old_price, new_price, changed_at)
+                VALUES (?, ?, ?, ?)
               `);
-              priceHistoryStmt.run(id, oldPrice, newPrice, (historyErr) => {
+              priceHistoryStmt.run(id, oldPrice, newPrice, getTurkeyTimestamp(), (historyErr) => {
                 if (historyErr) {
                   console.error('Failed to record price history:', historyErr);
                 }

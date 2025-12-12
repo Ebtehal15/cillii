@@ -680,8 +680,9 @@ const AdminPanel = () => {
 
   const generateHistoryOrderPdf = async (entry: OrderHistoryItem): Promise<Blob> => {
     const now = new Date(entry.createdAt);
-    const formattedDate = now.toLocaleDateString('en-GB');
-    const formattedTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    // Türkiye saatine göre formatla
+    const formattedDate = now.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const formattedTime = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' });
     const entryLanguage = entry.language || language;
 
     const htmlContent = `
@@ -920,7 +921,8 @@ const AdminPanel = () => {
 
   const exportSingleOrderToExcel = (entry: OrderHistoryItem) => {
     const createdDate = new Date(entry.createdAt);
-    const formattedDate = createdDate.toLocaleDateString('en-GB');
+    // Türkiye saatine göre formatla
+    const formattedDate = createdDate.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' });
     const entryLanguage = entry.language || language;
 
     // Tek sheet, tek tablo: Order ID | Date | Code | Group | Product Name | Quantity | Unit Price | Subtotal
@@ -1019,10 +1021,11 @@ const AdminPanel = () => {
     // Summary Sheet: Her order için özet bilgiler
     const summaryData = orderHistory.map((entry) => {
       const createdDate = new Date(entry.createdAt);
+      // Türkiye saatine göre formatla
       return {
         'Order ID': entry.orderId,
-        'Date': createdDate.toLocaleDateString('en-GB'),
-        'Time': createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        'Date': createdDate.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' }),
+        'Time': createdDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
         'Customer Name': entry.customerInfo.fullName || '',
         'Company': entry.customerInfo.company || '',
         'Phone': entry.customerInfo.phone || '',
@@ -1045,7 +1048,7 @@ const AdminPanel = () => {
         })();
         detailsData.push({
           'Order ID': entry.orderId,
-          'Date': new Date(entry.createdAt).toLocaleDateString('en-GB'),
+          'Date': new Date(entry.createdAt).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' }),
           'Customer': entry.customerInfo.fullName || '',
           'Product Code': item.specialId,
           'Group': item.quality || '',
@@ -2149,7 +2152,8 @@ const AdminPanel = () => {
                   <ul className="admin-order-history__list">
                     {orderHistory.map((entry) => {
                       const createdDate = new Date(entry.createdAt);
-                      const dateLabel = `${createdDate.toLocaleDateString('en-GB')} ${createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+                      // Türkiye saatine göre formatla
+                      const dateLabel = `${createdDate.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })} ${createdDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' })}`;
                       return (
                         <li key={entry.orderId} className="admin-order-history__item">
                           <div className="admin-order-history__info">
@@ -2254,7 +2258,9 @@ const PriceHistoryModal = ({ classId, className, onClose }: { classId: number; c
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString(language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-US' : 'es-ES', {
+    // Türkiye saatine göre formatla
+    return date.toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -2390,7 +2396,9 @@ const PriceChangesList = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString(language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-US' : 'es-ES', {
+    // Türkiye saatine göre formatla
+    return date.toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
       year: 'numeric',
       month: 'short',
       day: 'numeric',

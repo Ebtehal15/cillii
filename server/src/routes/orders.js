@@ -1,5 +1,6 @@
 const express = require('express');
 const { db } = require('../db');
+const { getTurkeyTimestamp } = require('../utils');
 
 const router = express.Router();
 
@@ -133,8 +134,9 @@ router.post('/', (req, res) => {
       known_total,
       total_items,
       has_unknown_prices,
-      language
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      language,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -149,6 +151,7 @@ router.post('/', (req, res) => {
     totalItems || 0,
     hasUnknownPrices ? 1 : 0,
     language || 'es',
+    getTurkeyTimestamp(),
     function insertCallback(err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
